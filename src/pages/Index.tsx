@@ -1,13 +1,20 @@
 
 import React, { useState } from 'react';
-import { Hotel, Users, Calendar, DollarSign, BarChart3, Settings } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
+import OYODashboard from '../components/OYODashboard';
 import HotelCard from '../components/HotelCard';
 import Dashboard from '../components/Dashboard';
-import { Button } from '@/components/ui/button';
+import { Hotel, Calendar, BarChart3, DollarSign, Users, HelpCircle, FileText, Settings, Scale } from 'lucide-react';
 
 const Index = () => {
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [userRole, setUserRole] = useState('super-admin');
+  const [activeSection, setActiveSection] = useState('growth');
+  const [userRole] = useState('super-admin');
+
+  const hotelInfo = {
+    id: 'KOL1560',
+    name: 'Hotel Brill Sector 2',
+    sector: 'Sector 2'
+  };
 
   const mockHotels = [
     {
@@ -42,112 +49,155 @@ const Index = () => {
     }
   ];
 
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'growth':
+        return <OYODashboard hotelInfo={hotelInfo} />;
+      case 'bookings':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <Calendar className="h-6 w-6 text-blue-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
+              </div>
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Booking calendar and management interface</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'pricing':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <DollarSign className="h-6 w-6 text-green-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Pricing Management</h2>
+              </div>
+              <div className="text-center py-12">
+                <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Dynamic pricing and rate management</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'operations':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div>
+              <div className="flex items-center mb-6">
+                <Settings className="h-6 w-6 text-purple-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Hotel Operations</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockHotels.map((hotel) => (
+                  <HotelCard key={hotel.id} hotel={hotel} userRole={userRole} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      case 'guest-directory':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <Users className="h-6 w-6 text-indigo-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Guest Directory</h2>
+              </div>
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Guest information and communication</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'help':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <HelpCircle className="h-6 w-6 text-orange-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Help & Support</h2>
+              </div>
+              <div className="text-center py-12">
+                <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Get help or raise a support ticket</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'earnings':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <DollarSign className="h-6 w-6 text-green-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Earnings Overview</h2>
+              </div>
+              <div className="text-center py-12">
+                <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Revenue and earnings analytics</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'reports':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <BarChart3 className="h-6 w-6 text-blue-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
+              </div>
+              <div className="text-center py-12">
+                <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Detailed reports and analytics dashboard</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <Settings className="h-6 w-6 text-gray-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+              </div>
+              <div className="text-center py-12">
+                <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">System settings and configuration</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'legal':
+        return (
+          <div className="flex-1 bg-gray-50 p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <Scale className="h-6 w-6 text-purple-600 mr-2" />
+                <h2 className="text-2xl font-bold text-gray-900">Legal</h2>
+              </div>
+              <div className="text-center py-12">
+                <Scale className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Legal documents and compliance</p>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return <Dashboard hotels={mockHotels} userRole={userRole} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-teal-600 p-2 rounded-lg">
-                <Hotel className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">HotelPro</h1>
-                <p className="text-xs text-gray-500">Multi-Hotel Management</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <select 
-                value={userRole} 
-                onChange={(e) => setUserRole(e.target.value)}
-                className="bg-white border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="super-admin">Super Admin</option>
-                <option value="hotel-admin">Hotel Admin</option>
-                <option value="receptionist">Receptionist</option>
-                <option value="kitchen-staff">Kitchen Staff</option>
-              </select>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                <span className="text-sm font-medium text-gray-700">Admin User</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8 h-12">
-            {['dashboard', 'hotels', 'bookings', 'reports'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setCurrentView(tab)}
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-colors capitalize ${
-                  currentView === tab
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab === 'dashboard' && <BarChart3 className="h-4 w-4 mr-2" />}
-                {tab === 'hotels' && <Hotel className="h-4 w-4 mr-2" />}
-                {tab === 'bookings' && <Calendar className="h-4 w-4 mr-2" />}
-                {tab === 'reports' && <DollarSign className="h-4 w-4 mr-2" />}
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'dashboard' && <Dashboard hotels={mockHotels} userRole={userRole} />}
-        
-        {currentView === 'hotels' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Hotel Properties</h2>
-              {userRole === 'super-admin' && (
-                <Button className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
-                  <Hotel className="h-4 w-4 mr-2" />
-                  Add Hotel
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockHotels.map((hotel) => (
-                <HotelCard key={hotel.id} hotel={hotel} userRole={userRole} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {currentView === 'bookings' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Management</h2>
-            <div className="text-center py-12">
-              <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Booking calendar and management interface coming soon!</p>
-            </div>
-          </div>
-        )}
-
-        {currentView === 'reports' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Reports & Analytics</h2>
-            <div className="text-center py-12">
-              <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Advanced reporting dashboard coming soon!</p>
-            </div>
-          </div>
-        )}
-      </main>
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      {renderContent()}
     </div>
   );
 };
