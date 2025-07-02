@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import OYODashboard from '../components/OYODashboard';
 import HotelCard from '../components/HotelCard';
 import Dashboard from '../components/Dashboard';
+import BookingManagement from '../components/BookingManagement';
 import { Hotel, Calendar, BarChart3, DollarSign, Users, HelpCircle, FileText, Settings, Scale } from 'lucide-react';
 
 const Index = () => {
@@ -54,20 +54,7 @@ const Index = () => {
       case 'growth':
         return <OYODashboard hotelInfo={hotelInfo} />;
       case 'bookings':
-        return (
-          <div className="flex-1 bg-gray-50 p-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center mb-4">
-                <Calendar className="h-6 w-6 text-blue-600 mr-2" />
-                <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
-              </div>
-              <div className="text-center py-12">
-                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Booking calendar and management interface</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <BookingManagement />;
       case 'pricing':
         return (
           <div className="flex-1 bg-gray-50 p-6">
