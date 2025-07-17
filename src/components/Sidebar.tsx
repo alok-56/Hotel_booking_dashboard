@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   Calendar, 
@@ -10,7 +10,14 @@ import {
   FileText, 
   BarChart3, 
   Scale,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Package,
+  Building,
+  Bed,
+  UtensilsCrossed,
+  Receipt,
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,17 +26,45 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  const toggleSubmenu = (menuId: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId)
+        : [...prev, menuId]
+    );
+  };
+
   const menuItems = [
     { id: 'growth', label: 'Growth', icon: TrendingUp },
-    { id: 'bookings', label: 'Bookings', icon: Calendar },
-    { id: 'pricing', label: 'Pricing', icon: DollarSign },
-    { id: 'operations', label: 'Operations', icon: Settings, hasSubmenu: true },
-    { id: 'guest-directory', label: 'Guest Directory', icon: Users, hasSubmenu: true },
-    { id: 'help', label: 'Help/Raise a ticket', icon: HelpCircle },
-    { id: 'earnings', label: 'Earnings', icon: DollarSign },
-    { id: 'reports', label: 'Reports', icon: BarChart3, hasSubmenu: true },
-    { id: 'settings', label: 'Settings', icon: Settings, hasSubmenu: true },
-    { id: 'legal', label: 'Legal', icon: Scale, hasSubmenu: true },
+    { id: 'booking', label: 'Booking', icon: Calendar },
+    { id: 'inventory', label: 'Inventory', icon: Package },
+    { 
+      id: 'hotel', 
+      label: 'Hotel', 
+      icon: Building, 
+      hasSubmenu: true,
+      submenu: [
+        { id: 'hotels', label: 'Hotels', icon: Building },
+        { id: 'rooms', label: 'Rooms', icon: Bed },
+        { id: 'menu', label: 'Menu', icon: UtensilsCrossed }
+      ]
+    },
+    { id: 'guest-directory', label: 'Guest Directory', icon: Users },
+    { id: 'expense', label: 'Expense', icon: Receipt },
+    { id: 'payments', label: 'Payments', icon: CreditCard },
+    { 
+      id: 'reports', 
+      label: 'Reports', 
+      icon: BarChart3, 
+      hasSubmenu: true,
+      submenu: [
+        { id: 'booking-report', label: 'Booking', icon: Calendar },
+        { id: 'earning-report', label: 'Earning', icon: DollarSign },
+        { id: 'room-wise-earning', label: 'Room wise earning', icon: TrendingUp }
+      ]
+    },
   ];
 
   return (
@@ -47,27 +82,59 @@ const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
       {/* Menu Items */}
       <div className="flex-1 py-4">
         {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSectionChange(item.id)}
-            className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-              activeSection === item.id ? 'bg-gray-50 border-r-2 border-red-600' : ''
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <item.icon className={`h-5 w-5 ${
-                activeSection === item.id ? 'text-red-600' : 'text-gray-500'
-              }`} />
-              <span className={`text-sm ${
-                activeSection === item.id ? 'text-red-600 font-medium' : 'text-gray-700'
-              }`}>
-                {item.label}
-              </span>
-            </div>
-            {item.hasSubmenu && (
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+          <div key={item.id}>
+            <button
+              onClick={() => {
+                if (item.hasSubmenu) {
+                  toggleSubmenu(item.id);
+                } else {
+                  onSectionChange(item.id);
+                }
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                activeSection === item.id || (item.submenu && item.submenu.some(sub => activeSection === sub.id)) 
+                  ? 'bg-gray-50 border-r-2 border-red-600' : ''
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <item.icon className={`h-5 w-5 ${
+                  activeSection === item.id || (item.submenu && item.submenu.some(sub => activeSection === sub.id))
+                    ? 'text-red-600' : 'text-gray-500'
+                }`} />
+                <span className={`text-sm ${
+                  activeSection === item.id || (item.submenu && item.submenu.some(sub => activeSection === sub.id))
+                    ? 'text-red-600 font-medium' : 'text-gray-700'
+                }`}>
+                  {item.label}
+                </span>
+              </div>
+              {item.hasSubmenu && (
+                expandedMenus.includes(item.id) 
+                  ? <ChevronDown className="h-4 w-4 text-gray-400" />
+                  : <ChevronRight className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
+            
+            {/* Submenu */}
+            {item.hasSubmenu && expandedMenus.includes(item.id) && item.submenu && (
+              <div className="bg-gray-25 border-l-2 border-gray-100 ml-4">
+                {item.submenu.map((subItem) => (
+                  <button
+                    key={subItem.id}
+                    onClick={() => onSectionChange(subItem.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
+                      activeSection === subItem.id ? 'bg-gray-100 text-red-600 font-medium' : 'text-gray-600'
+                    }`}
+                  >
+                    <subItem.icon className={`h-4 w-4 ${
+                      activeSection === subItem.id ? 'text-red-600' : 'text-gray-400'
+                    }`} />
+                    <span className="text-sm">{subItem.label}</span>
+                  </button>
+                ))}
+              </div>
             )}
-          </button>
+          </div>
         ))}
       </div>
 

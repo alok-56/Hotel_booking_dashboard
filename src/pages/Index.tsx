@@ -2,17 +2,17 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import OYODashboard from '../components/OYODashboard';
-import HotelCard from '../components/HotelCard';
-import Dashboard from '../components/Dashboard';
 import BookingManagement from '../components/BookingManagement';
-import PricingManagement from '../components/PricingManagement';
-import OperationsManagement from '../components/OperationsManagement';
+import InventoryManagement from '../components/InventoryManagement';
+import HotelsManagement from '../components/HotelsManagement';
+import RoomsManagement from '../components/RoomsManagement';
+import MenuManagement from '../components/MenuManagement';
 import GuestDirectory from '../components/GuestDirectory';
-import HelpSupport from '../components/HelpSupport';
-import EarningsOverview from '../components/EarningsOverview';
-import ReportsAnalytics from '../components/ReportsAnalytics';
-import SettingsPanel from '../components/SettingsPanel';
-import LegalCompliance from '../components/LegalCompliance';
+import ExpenseManagement from '../components/ExpenseManagement';
+import PaymentsManagement from '../components/PaymentsManagement';
+import BookingReport from '../components/BookingReport';
+import EarningReport from '../components/EarningReport';
+import RoomWiseEarningReport from '../components/RoomWiseEarningReport';
 import { Hotel, Calendar, BarChart3, DollarSign, Users, HelpCircle, FileText, Settings, Scale } from 'lucide-react';
 
 const Index = () => {
