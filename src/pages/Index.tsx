@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import OYODashboard from '../components/OYODashboard';
@@ -13,7 +12,6 @@ import PaymentsManagement from '../components/PaymentsManagement';
 import BookingReport from '../components/BookingReport';
 import EarningReport from '../components/EarningReport';
 import RoomWiseEarningReport from '../components/RoomWiseEarningReport';
-import { Hotel, Calendar, BarChart3, DollarSign, Users, HelpCircle, FileText, Settings, Scale } from 'lucide-react';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('growth');
@@ -62,33 +60,37 @@ const Index = () => {
     switch (activeSection) {
       case 'growth':
         return <OYODashboard hotelInfo={hotelInfo} />;
-      case 'bookings':
+      case 'booking':
         return <BookingManagement />;
-      case 'pricing':
-        return <PricingManagement />;
-      case 'operations':
-        return <OperationsManagement hotels={mockHotels} userRole={userRole} />;
+      case 'inventory':
+        return <InventoryManagement />;
+      case 'hotels':
+        return <HotelsManagement />;
+      case 'rooms':
+        return <RoomsManagement />;
+      case 'menu':
+        return <MenuManagement />;
       case 'guest-directory':
         return <GuestDirectory />;
-      case 'help':
-        return <HelpSupport />;
-      case 'earnings':
-        return <EarningsOverview />;
-      case 'reports':
-        return <ReportsAnalytics />;
-      case 'settings':
-        return <SettingsPanel />;
-      case 'legal':
-        return <LegalCompliance />;
+      case 'expense':
+        return <ExpenseManagement />;
+      case 'payments':
+        return <PaymentsManagement />;
+      case 'booking-report':
+        return <BookingReport />;
+      case 'earning-report':
+        return <EarningReport />;
+      case 'room-wise-earning':
+        return <RoomWiseEarningReport />;
       default:
-        return <Dashboard hotels={mockHotels} userRole={userRole} />;
+        return <OYODashboard hotelInfo={hotelInfo} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      {renderContent()}
+      <div className="flex-1 overflow-y-auto">{renderContent()}</div>
     </div>
   );
 };
