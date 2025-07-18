@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
+import LoginPage from '../components/LoginPage';
 import OYODashboard from '../components/OYODashboard';
 import BookingManagement from '../components/BookingManagement';
 import InventoryManagement from '../components/InventoryManagement';
@@ -7,6 +8,7 @@ import HotelsManagement from '../components/HotelsManagement';
 import RoomsManagement from '../components/RoomsManagement';
 import MenuManagement from '../components/MenuManagement';
 import GuestDirectory from '../components/GuestDirectory';
+import AdminManagement from '../components/AdminManagement';
 import ExpenseManagement from '../components/ExpenseManagement';
 import PaymentsManagement from '../components/PaymentsManagement';
 import BookingReport from '../components/BookingReport';
@@ -16,6 +18,23 @@ import RoomWiseEarningReport from '../components/RoomWiseEarningReport';
 const Index = () => {
   const [activeSection, setActiveSection] = useState('growth');
   const [userRole] = useState('super-admin');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated');
+    setIsAuthenticated(authStatus === 'true');
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    setActiveSection('growth');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userEmail');
+    setIsAuthenticated(false);
+  };
 
   const hotelInfo = {
     id: 'KOL1560',
@@ -59,7 +78,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'growth':
-        return <OYODashboard hotelInfo={hotelInfo} />;
+        return <OYODashboard />;
       case 'booking':
         return <BookingManagement />;
       case 'inventory':
@@ -72,6 +91,8 @@ const Index = () => {
         return <MenuManagement />;
       case 'guest-directory':
         return <GuestDirectory />;
+      case 'admin-management':
+        return <AdminManagement />;
       case 'expense':
         return <ExpenseManagement />;
       case 'payments':
@@ -83,9 +104,13 @@ const Index = () => {
       case 'room-wise-earning':
         return <RoomWiseEarningReport />;
       default:
-        return <OYODashboard hotelInfo={hotelInfo} />;
+        return <OYODashboard />;
     }
   };
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">

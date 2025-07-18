@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   TrendingUp, Calendar, DollarSign, Settings, Users,
   ChevronRight, ChevronDown, Package, Building, Bed,
-  UtensilsCrossed, Receipt, CreditCard, BarChart3
+  UtensilsCrossed, Receipt, CreditCard, BarChart3, Shield
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -37,6 +37,7 @@ const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
       ]
     },
     { id: 'guest-directory', label: 'Guest Directory', icon: Users },
+    { id: 'admin-management', label: 'Admin Management', icon: Shield },
     { id: 'expense', label: 'Expense', icon: Receipt },
     { id: 'payments', label: 'Payments', icon: CreditCard },
     {
