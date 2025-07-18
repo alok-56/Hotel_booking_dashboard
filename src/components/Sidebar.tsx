@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { 
   TrendingUp, Calendar, DollarSign, Settings, Users,
   ChevronRight, ChevronDown, Package, Building, Bed,
-  UtensilsCrossed, Receipt, CreditCard, BarChart3, Shield
+  UtensilsCrossed, Receipt, CreditCard, BarChart3, Shield,
+  Globe, MessageSquare, Briefcase, LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onLogout?: () => void;
 }
 
-const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
+const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const toggleSubmenu = (menuId: string) => {
@@ -38,6 +40,16 @@ const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
     },
     { id: 'guest-directory', label: 'Guest Directory', icon: Users },
     { id: 'admin-management', label: 'Admin Management', icon: Shield },
+    {
+      id: 'website',
+      label: 'Website',
+      icon: Globe,
+      hasSubmenu: true,
+      submenu: [
+        { id: 'query', label: 'Query', icon: MessageSquare },
+        { id: 'b2b', label: 'B2B', icon: Briefcase }
+      ]
+    },
     { id: 'expense', label: 'Expense', icon: Receipt },
     { id: 'payments', label: 'Payments', icon: CreditCard },
     {
@@ -147,8 +159,12 @@ const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">Md Naz...</p>
           </div>
-          <button className="text-gray-400 hover:text-gray-600">
-            <Settings className="h-4 w-4" />
+          <button 
+            className="text-gray-400 hover:text-gray-600"
+            onClick={onLogout}
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>

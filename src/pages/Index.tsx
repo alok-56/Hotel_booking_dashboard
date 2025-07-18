@@ -9,6 +9,8 @@ import RoomsManagement from '../components/RoomsManagement';
 import MenuManagement from '../components/MenuManagement';
 import GuestDirectory from '../components/GuestDirectory';
 import AdminManagement from '../components/AdminManagement';
+import QueryManagement from '../components/QueryManagement';
+import B2BManagement from '../components/B2BManagement';
 import ExpenseManagement from '../components/ExpenseManagement';
 import PaymentsManagement from '../components/PaymentsManagement';
 import BookingReport from '../components/BookingReport';
@@ -93,6 +95,10 @@ const Index = () => {
         return <GuestDirectory />;
       case 'admin-management':
         return <AdminManagement />;
+      case 'query':
+        return <QueryManagement />;
+      case 'b2b':
+        return <B2BManagement />;
       case 'expense':
         return <ExpenseManagement />;
       case 'payments':
@@ -114,7 +120,7 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
       <div className="flex-1 overflow-y-auto">{renderContent()}</div>
     </div>
   );
