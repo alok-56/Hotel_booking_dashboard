@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Plus, 
@@ -13,8 +13,11 @@ import {
   Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import BookingDetailModal from './BookingDetailModal';
-import AddBookingModal from './AddBookingModal';
+import EnhancedAddBookingModal from './EnhancedAddBookingModal';
+import { PageSkeleton, TableSkeleton } from './SkeletonLoader';
+import { getAllBookings, updateBookingStatus } from '@/api/Services/Booking/booking';
 
 interface Booking {
   id: string;
@@ -36,67 +39,80 @@ interface Booking {
 }
 
 const BookingManagement = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'in-house' | 'completed'>('upcoming');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDetail, setShowBookingDetail] = useState(false);
   const [showAddBooking, setShowAddBooking] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const mockBookings: Booking[] = [
-    {
-      id: '1',
-      guestName: 'Mohan Kumar',
-      bookingId: '#STA66344',
-      checkIn: '12 Jul 2025',
-      checkOut: '13 Jul 2025',
-      nights: 1,
-      rooms: 1,
-      amount: 1347,
-      amountCollected: 0,
-      status: 'upcoming',
-      paymentStatus: 'pending',
-      guestCount: 2,
-      roomType: 'Classic',
-      source: 'direct',
-      phoneNumber: '+91 9876543210',
-      email: 'mohan@example.com'
-    },
-    {
-      id: '2',
-      guestName: 'Subhajit Sarkar',
-      bookingId: '#KJBA8288',
-      checkIn: '12 Jul 2025',
-      checkOut: '13 Jul 2025',
-      nights: 1,
-      rooms: 1,
-      amount: 1347,
-      amountCollected: 84,
-      status: 'upcoming',
-      paymentStatus: 'partial',
-      guestCount: 2,
-      roomType: 'Classic',
-      source: 'ota',
-      phoneNumber: '+91 9876543211',
-      email: 'subhajit@example.com'
-    },
-    {
-      id: '3',
-      guestName: 'Priya Sharma',
-      bookingId: '#ABC12345',
-      checkIn: '10 Jul 2025',
-      checkOut: '12 Jul 2025',
-      nights: 2,
-      rooms: 1,
-      amount: 2694,
-      amountCollected: 2694,
-      status: 'in-house',
-      paymentStatus: 'paid',
-      guestCount: 3,
-      roomType: 'Deluxe',
-      source: 'direct',
-      phoneNumber: '+91 9876543212',
-      email: 'priya@example.com'
+  useEffect(() => {
+    loadBookings();
+  }, []);
+
+  const loadBookings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getAllBookings();
+      
+      if (response.status) {
+        // Transform API response to match our interface
+        const transformedBookings: Booking[] = response.data.map((booking: any) => ({
+          id: booking._id || booking.id,
+          guestName: booking.userInfo?.[0]?.name || 'Unknown Guest',
+          bookingId: `#${booking._id?.slice(-8)?.toUpperCase()}` || '#UNKNOWN',
+          checkIn: new Date(booking.checkInDate).toLocaleDateString(),
+          checkOut: new Date(booking.checkOutDate).toLocaleDateString(),
+          nights: Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)),
+          rooms: booking.roomId?.length || 1,
+          amount: booking.totalAmount || 0,
+          amountCollected: booking.amountCollected || 0,
+          status: booking.status === 'confirmed' ? 'upcoming' : booking.status === 'checkin' ? 'in-house' : booking.status,
+          paymentStatus: booking.paymentStatus || 'pending',
+          guestCount: (booking.guests?.adults || 1) + (booking.guests?.children || 0),
+          roomType: booking.roomType || 'Standard',
+          source: booking.source || 'direct',
+          phoneNumber: booking.userInfo?.[0]?.phone || '',
+          email: booking.userInfo?.[0]?.email || ''
+        }));
+        
+        setBookings(transformedBookings);
+      } else {
+        throw new Error(response.message || 'Failed to load bookings');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load bookings';
+      setError(errorMessage);
+      setBookings([]);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
+    try {
+      await updateBookingStatus(bookingId, newStatus);
+      toast({
+        title: "Status Updated",
+        description: `Booking status updated to ${newStatus}`,
+      });
+      loadBookings(); // Refresh bookings
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update booking status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -116,13 +132,24 @@ const BookingManagement = () => {
     }
   };
 
-  const filteredBookings = mockBookings.filter(booking => booking.status === activeTab);
-  const upcomingCount = mockBookings.filter(b => b.status === 'upcoming').length;
+  const filteredBookings = bookings.filter(booking => booking.status === activeTab);
+  const upcomingCount = bookings.filter(b => b.status === 'upcoming').length;
+  const inHouseCount = bookings.filter(b => b.status === 'in-house').length;
+  const completedCount = bookings.filter(b => b.status === 'completed').length;
 
   const handleBookingClick = (booking: Booking) => {
     setSelectedBooking(booking);
     setShowBookingDetail(true);
   };
+
+  const handleBookingSuccess = () => {
+    loadBookings();
+    setShowAddBooking(false);
+  };
+
+  if (loading) {
+    return <PageSkeleton />;
+  }
 
   return (
     <div className="flex-1 bg-gray-50 p-6">
@@ -157,8 +184,8 @@ const BookingManagement = () => {
           <nav className="flex space-x-8 px-6">
             {[
               { key: 'upcoming', label: 'Upcoming', count: upcomingCount },
-              { key: 'in-house', label: 'In-house', count: 0 },
-              { key: 'completed', label: 'Completed', count: 0 }
+              { key: 'in-house', label: 'In-house', count: inHouseCount },
+              { key: 'completed', label: 'Completed', count: completedCount }
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -273,8 +300,9 @@ const BookingManagement = () => {
       )}
 
       {showAddBooking && (
-        <AddBookingModal
+        <EnhancedAddBookingModal
           onClose={() => setShowAddBooking(false)}
+          onSuccess={handleBookingSuccess}
         />
       )}
     </div>

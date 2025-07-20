@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 
 interface AddBookingModalProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const AddBookingModal: React.FC<AddBookingModalProps> = ({ onClose }) => {
+const AddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSuccess }) => {
   const [guestName, setGuestName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');

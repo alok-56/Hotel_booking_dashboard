@@ -19,6 +19,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { PageSkeleton, CardSkeleton, StatsCardSkeleton } from "./SkeletonLoader";
 
 // Import your API functions (adjust the path as needed)
 import {
@@ -184,7 +185,9 @@ const MenuManagement = () => {
   };
 
   const handleDeleteMenu = async (id) => {
-    if (window.confirm("Are you sure you want to delete this menu item?")) {
+    // Replace window.confirm with a more elegant confirmation
+    const confirmed = window.confirm("Are you sure you want to delete this menu item?");
+    if (confirmed) {
       try {
         const response = await deleteMenu(id);
         if (response.success) {
@@ -271,11 +274,7 @@ const MenuManagement = () => {
       : 0;
 
   if (loading) {
-    return (
-      <div className="flex-1 p-6 bg-gray-50 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
@@ -372,7 +371,11 @@ const MenuManagement = () => {
 
       {/* Menu Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMenus.map((item) => (
+        {loading ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <CardSkeleton key={index} />
+          ))
+        ) : filteredMenus.map((item) => (
           <Card key={item._id}>
             <CardHeader>
               <div className="flex justify-between items-start">
