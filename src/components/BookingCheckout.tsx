@@ -166,6 +166,8 @@ const BookingCheckout: React.FC<BookingCheckoutProps> = ({
     try {
       setLoading(true);
       const totals = calculateTotals();
+
+      
       
       const payload = {
         hotelId: bookingData.hotelId,

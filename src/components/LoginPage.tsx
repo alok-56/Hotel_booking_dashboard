@@ -36,7 +36,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         localStorage.setItem("token", result?.token || "");
         toast({
           title: "Login Successful",
-          description: "Welcome to OYO Hotel Management System",
+          description: "Welcome to BRILL ROOMS Hotel Management System",
         });
         onLogin();
       } else {
@@ -64,7 +64,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center space-x-2 mb-4">
             <div className="bg-red-600 text-white px-3 py-2 rounded-lg font-bold text-xl">
-              OYO
+              BRILL ROOMS
             </div>
             <span className="font-bold text-2xl text-gray-800">
               Hotel Management
@@ -127,15 +127,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Demo credentials:</p>
-              <p>Email: admin@hotel.com | Password: admin123</p>
-            </div>
+           
           </CardContent>
         </Card>
 
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>© 2024 OYO Hotel Management System. All rights reserved.</p>
+          <p>© 2024 BRILL ROOMS Hotel Management System. All rights reserved.</p>
         </div>
       </div>
     </div>

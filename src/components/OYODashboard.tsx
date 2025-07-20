@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Eye, Star, Calendar, TrendingUp, Search, Check, ChevronDown, BarChart3, LineChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { getAllHotels } from '@/api/Services/Hotel/hotel';
+import { getDailyBookingsChart, getDashboardCounts, getRevenueVsBookingChart } from '@/api/Services/Report/report';
 
 interface Hotel {
-  id: string;
-  name: string;
-  sector: string;
+  _id: string;
+  hotelName: string;
+  city: string;
+  state: string;
+  address: string;
+  starRating: number;
+  facilities: string[];
+  // Add any additional fields you need for calculations
+  todayBookings?: number;
+  todayEarnings?: number;
+  todayVacantRooms?: number;
+  lastMonthBookings?: number;
+  lastMonthEarnings?: number;
+  totalRooms?: number;
+  allTimeBookings?: number;
+  allTimeEarnings?: number;
+}
+
+interface DashboardCounts {
   todayBookings: number;
   todayEarnings: number;
   todayVacantRooms: number;
@@ -16,107 +34,111 @@ interface Hotel {
   totalRooms: number;
   allTimeBookings: number;
   allTimeEarnings: number;
+  selectedHotelsCount: number;
+  totalHotelsCount: number;
 }
 
 const OYODashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('Last 30 days');
-  const [currentDate] = useState('1 June - 30 June');
-  const [selectedHotels, setSelectedHotels] = useState<string[]>(['HTL001']);
+  const [selectedHotels, setSelectedHotels] = useState<string[]>([]);
   const [showHotelSelector, setShowHotelSelector] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  
+  // API Data State
+  const [dashboardCounts, setDashboardCounts] = useState<DashboardCounts | null>(null);
+  const [revenueBookingData, setRevenueBookingData] = useState<any[]>([]);
+  const [dailyBookingsData, setDailyBookingsData] = useState<any[]>([]);
+  const [chartSummary, setChartSummary] = useState<any>(null);
+  const [bookingAnalytics, setBookingAnalytics] = useState<any>(null);
 
-  const hotels: Hotel[] = [
-    {
-      id: 'HTL001',
-      name: 'Smriti Villa',
-      sector: 'Sector 15',
-      todayBookings: 12,
-      todayEarnings: 8500,
-      todayVacantRooms: 8,
-      lastMonthBookings: 320,
-      lastMonthEarnings: 245000,
-      totalRooms: 20,
-      allTimeBookings: 1250,
-      allTimeEarnings: 985000
-    },
-    {
-      id: 'HTL002',
-      name: 'HOTEL SKYSPACE',
-      sector: 'Sector 22',
-      todayBookings: 8,
-      todayEarnings: 6200,
-      todayVacantRooms: 5,
-      lastMonthBookings: 280,
-      lastMonthEarnings: 198000,
-      totalRooms: 15,
-      allTimeBookings: 980,
-      allTimeEarnings: 756000
-    },
-    {
-      id: 'HTL003',
-      name: 'R S Hotels',
-      sector: 'Sector 18',
-      todayBookings: 15,
-      todayEarnings: 11200,
-      todayVacantRooms: 12,
-      lastMonthBookings: 380,
-      lastMonthEarnings: 289000,
-      totalRooms: 25,
-      allTimeBookings: 1580,
-      allTimeEarnings: 1250000
-    },
-    {
-      id: 'HTL004',
-      name: 'Elite Stay',
-      sector: 'Sector 12',
-      todayBookings: 6,
-      todayEarnings: 4800,
-      todayVacantRooms: 3,
-      lastMonthBookings: 220,
-      lastMonthEarnings: 167000,
-      totalRooms: 12,
-      allTimeBookings: 850,
-      allTimeEarnings: 645000
-    }
-  ];
-
-  const periods = ['Last 30 days', 'Last 7 days', 'Today', 'This Month'];
-
-  // Sample day-wise data for the last 30 days
-  const generateDayWiseData = () => {
-    const data = [];
-    const today = new Date();
-    
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      
-      const dayData = {
-        date: `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'long' })}`,
-        fullDate: date.toISOString().split('T')[0],
-        bookings: 0,
-        earnings: 0
-      };
-
-      // Calculate aggregated data for selected hotels
-      selectedHotels.forEach(hotelId => {
-        const hotel = hotels.find(h => h.id === hotelId);
-        if (hotel) {
-          // Generate realistic day-wise data based on hotel performance
-          const baseBookings = Math.floor(hotel.todayBookings * (0.7 + Math.random() * 0.6));
-          const baseEarnings = Math.floor(hotel.todayEarnings * (0.7 + Math.random() * 0.6));
-          
-          dayData.bookings += Math.max(0, baseBookings + Math.floor(Math.random() * 5 - 2));
-          dayData.earnings += Math.max(0, baseEarnings + Math.floor(Math.random() * 2000 - 1000));
-        }
-      });
-
-      data.push(dayData);
-    }
-    
-    return data;
+  // Period mapping for API calls
+  const periodMapping = {
+    'Today': 'today',
+    'Last 7 days': 'last_7_days',
+    'Last 15 days': 'last_15_days',
+    'Last 30 days': 'last_30_days'
   };
 
-  const dayWiseData = generateDayWiseData();
+  // Updated periods array to match API requirements
+  const periods = ['Today', 'Last 7 days', 'Last 15 days', 'Last 30 days'];
+
+  // Helper function to get API period value
+  const getApiPeriod = (displayPeriod: string) => {
+    return periodMapping[displayPeriod] || 'last_30_days';
+  };
+
+  // Fetch hotels from API
+  const fetchHotels = async () => {
+    setHotelsLoading(true);
+    try {
+      const response = await getAllHotels();
+      if (response.status) {
+        setHotels(response.data);
+        // Auto-select first hotel if none selected
+        if (selectedHotels.length === 0 && response.data.length > 0) {
+          setSelectedHotels([response.data[0]._id]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+      // Fallback to empty array on error
+      setHotels([]);
+    } finally {
+      setHotelsLoading(false);
+    }
+  };
+
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    if (selectedHotels.length === 0) return;
+    
+    setLoading(true);
+    try {
+      const apiPeriod = getApiPeriod(selectedPeriod);
+      console.log('Fetching data with period:', apiPeriod); // Debug log
+      
+      // Fetch dashboard counts
+      const counts = await getDashboardCounts(selectedHotels);
+      if (counts && counts.success) {
+        setDashboardCounts(counts.data);
+      }
+
+      // Fetch revenue vs booking chart data
+      const revenueData = await getRevenueVsBookingChart(apiPeriod, selectedHotels);
+      if (revenueData && revenueData.success && revenueData.data && revenueData.data.chartData) {
+        setRevenueBookingData(revenueData.data.chartData);
+        setChartSummary(revenueData.data.summary);
+      }
+
+      // Fetch daily bookings chart data
+      const bookingsData = await getDailyBookingsChart(apiPeriod, selectedHotels);
+      if (bookingsData && bookingsData.success && bookingsData.data && bookingsData.data.bookingData) {
+        setDailyBookingsData(bookingsData.data.bookingData);
+        setBookingAnalytics(bookingsData.data.analytics);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Reset data on error
+      setRevenueBookingData([]);
+      setDailyBookingsData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch hotels when component mounts
+  useEffect(() => {
+    fetchHotels();
+  }, []);
+
+  // Fetch dashboard data when hotels or period changes
+  useEffect(() => {
+    if (selectedHotels.length > 0) {
+      fetchDashboardData();
+    }
+  }, [selectedHotels, selectedPeriod]);
 
   const toggleHotelSelection = (hotelId: string) => {
     setSelectedHotels(prev => 
@@ -126,19 +148,14 @@ const OYODashboard = () => {
     );
   };
 
-  const getSelectedHotelsData = () => {
-    const selected = hotels.filter(hotel => selectedHotels.includes(hotel.id));
-    return selected.reduce((acc, hotel) => {
-      acc.todayBookings += hotel.todayBookings;
-      acc.todayEarnings += hotel.todayEarnings;
-      acc.todayVacantRooms += hotel.todayVacantRooms;
-      acc.lastMonthBookings += hotel.lastMonthBookings;
-      acc.lastMonthEarnings += hotel.lastMonthEarnings;
-      acc.totalRooms += hotel.totalRooms;
-      acc.allTimeBookings += hotel.allTimeBookings;
-      acc.allTimeEarnings += hotel.allTimeEarnings;
-      return acc;
-    }, {
+  // Use API data if available, otherwise show zeros
+  const getDisplayData = () => {
+    if (dashboardCounts) {
+      return dashboardCounts;
+    }
+    
+    // Fallback data when no API data is available
+    return {
       todayBookings: 0,
       todayEarnings: 0,
       todayVacantRooms: 0,
@@ -146,88 +163,79 @@ const OYODashboard = () => {
       lastMonthEarnings: 0,
       totalRooms: 0,
       allTimeBookings: 0,
-      allTimeEarnings: 0
-    });
+      allTimeEarnings: 0,
+      selectedHotelsCount: selectedHotels.length,
+      totalHotelsCount: hotels.length
+    };
   };
 
-  const aggregatedData = getSelectedHotelsData();
+  const displayData = getDisplayData();
 
   const bookingMetrics = [
     {
       title: "Today's Booking",
-      value: aggregatedData.todayBookings.toString(),
+      value: displayData.todayBookings?.toString() || '0',
       color: 'text-blue-600',
       icon: Calendar
     },
     {
       title: "Today's Earning",
-      value: `₹${aggregatedData.todayEarnings.toLocaleString()}`,
+      value: `₹${displayData.todayEarnings?.toLocaleString() || '0'}`,
       color: 'text-green-600',
       icon: TrendingUp
     },
     {
       title: "Today's Vacant Rooms",
-      value: aggregatedData.todayVacantRooms.toString(),
+      value: displayData.todayVacantRooms?.toString() || '0',
       color: 'text-orange-600',
       icon: Eye
     },
     {
       title: "Last Month Bookings",
-      value: aggregatedData.lastMonthBookings.toString(),
+      value: displayData.lastMonthBookings?.toString() || '0',
       color: 'text-purple-600',
       icon: Calendar
     },
     {
       title: "Last Month Earnings",
-      value: `₹${aggregatedData.lastMonthEarnings.toLocaleString()}`,
+      value: `₹${displayData.lastMonthEarnings?.toLocaleString() || '0'}`,
       color: 'text-green-600',
       icon: TrendingUp
     },
     {
-      title: "Total Rooms",
-      value: aggregatedData.totalRooms.toString(),
+      title: "Total Rooms types",
+      value: displayData.totalRooms?.toString() || '0',
       color: 'text-gray-600',
       icon: Eye
     },
     {
       title: "All Time Booking",
-      value: aggregatedData.allTimeBookings.toString(),
+      value: displayData.allTimeBookings?.toString() || '0',
       color: 'text-indigo-600',
       icon: Calendar
     },
     {
       title: "All Time Earning",
-      value: `₹${aggregatedData.allTimeEarnings.toLocaleString()}`,
+      value: `₹${displayData.allTimeEarnings?.toLocaleString() || '0'}`,
       color: 'text-green-600',
       icon: TrendingUp
     }
   ];
 
-  const superOyoTargets = [
-    {
-      title: 'Check-in denials < 1.5 %',
-      value: '0%',
-      color: 'text-green-600'
-    },
-    {
-      title: '1 & 2 star ratings < 16 %',
-      value: '0%',
-      subtitle: 'Feedback count must exceed 3. Get 4 more',
-      color: 'text-green-600'
-    },
-    {
-      title: 'Availability > 40 %',
-      value: '100%',
-      color: 'text-green-600'
-    },
-    {
-      title: 'Property rating > 4',
-      value: '3.93',
-      color: 'text-orange-600'
-    }
-  ];
-
   const formatCurrency = (value) => `₹${value.toLocaleString()}`;
+
+  const occupancyRate = displayData.totalRooms > 0 
+    ? Math.round(((displayData.totalRooms - displayData.todayVacantRooms) / displayData.totalRooms) * 100)
+    : 0;
+
+  const getSelectedHotelNames = () => {
+    if (selectedHotels.length === 0) return 'No Hotels Selected';
+    if (selectedHotels.length === 1) {
+      const hotel = hotels.find(h => h._id === selectedHotels[0]);
+      return hotel?.hotelName || 'Unknown Hotel';
+    }
+    return `${selectedHotels.length} Hotels Selected`;
+  };
 
   return (
     <div className="flex-1 bg-gray-50">
@@ -252,37 +260,44 @@ const OYODashboard = () => {
             <button
               onClick={() => setShowHotelSelector(!showHotelSelector)}
               className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
+              disabled={loading || hotelsLoading}
             >
               <span className="text-sm font-medium">
-                {selectedHotels.length === 1 
-                  ? hotels.find(h => h.id === selectedHotels[0])?.name 
-                  : `${selectedHotels.length} Hotels Selected`}
+                {hotelsLoading ? 'Loading Hotels...' : getSelectedHotelNames()}
               </span>
               <ChevronDown className="h-4 w-4 text-gray-400" />
             </button>
             
-            {showHotelSelector && (
+            {showHotelSelector && !hotelsLoading && (
               <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-sm font-medium text-gray-900">Select Hotels</h3>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
-                  {hotels.map((hotel) => (
-                    <div key={hotel.id} className="p-3 hover:bg-gray-50 border-b border-gray-100">
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedHotels.includes(hotel.id)}
-                          onChange={() => toggleHotelSelection(hotel.id)}
-                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
-                          <div className="text-xs text-gray-500">{hotel.id} • {hotel.sector}</div>
-                        </div>
-                      </label>
+                  {hotels.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <p>No hotels available</p>
                     </div>
-                  ))}
+                  ) : (
+                    hotels.map((hotel) => (
+                      <div key={hotel._id} className="p-3 hover:bg-gray-50 border-b border-gray-100">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedHotels.includes(hotel._id)}
+                            onChange={() => toggleHotelSelection(hotel._id)}
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{hotel.hotelName}</div>
+                            <div className="text-xs text-gray-500">
+                              {hotel.city}, {hotel.state} • {hotel.starRating}★
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -292,16 +307,42 @@ const OYODashboard = () => {
 
       {/* Main Content */}
       <div className="p-6">
+        {loading && (
+          <div className="fixed top-0 right-0 m-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Loading data...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show message when no hotels are selected */}
+        {selectedHotels.length === 0 && !hotelsLoading && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Eye className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Please select at least one hotel to view dashboard data.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Time Period Selector */}
         <div className="flex items-center space-x-1 mb-6">
           {periods.map((period) => (
             <button
               key={period}
               onClick={() => setSelectedPeriod(period)}
+              disabled={loading || selectedHotels.length === 0}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 selectedPeriod === period
                   ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-600 hover:bg-gray-100 disabled:opacity-50'
               }`}
             >
               {period}
@@ -309,7 +350,6 @@ const OYODashboard = () => {
           ))}
         </div>
 
-        <div className="text-sm text-gray-500 mb-6">{currentDate}</div>
 
         {/* Booking & Earnings Metrics */}
         <div className="mb-8">
@@ -343,13 +383,13 @@ const OYODashboard = () => {
               </div>
               <div className="flex space-x-3">
                 <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-blue-200">
-                  <div className="text-sm text-gray-500">Total Hotels</div>
+                  <div className="text-sm text-gray-500">Selected Hotels</div>
                   <div className="text-lg font-bold text-blue-600">{selectedHotels.length}</div>
                 </div>
                 <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-green-200">
                   <div className="text-sm text-gray-500">Avg. Occupancy</div>
                   <div className="text-lg font-bold text-green-600">
-                    {Math.round(((aggregatedData.totalRooms - aggregatedData.todayVacantRooms) / aggregatedData.totalRooms) * 100)}%
+                    {occupancyRate}%
                   </div>
                 </div>
               </div>
@@ -364,7 +404,7 @@ const OYODashboard = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">Revenue & Booking Trends</h3>
-                    <p className="text-sm text-gray-500">Last 30 days performance overview</p>
+                    <p className="text-sm text-gray-500">{selectedPeriod} performance overview</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -376,11 +416,25 @@ const OYODashboard = () => {
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-sm text-gray-600">Earnings</span>
                   </div>
+                  {chartSummary && (
+                    <div className="flex space-x-2 ml-4">
+                      <div className="bg-blue-50 rounded-lg px-2 py-1 border border-blue-200">
+                        <span className="text-xs text-blue-600 font-medium">
+                          Peak Day: {chartSummary.peakDay} ({chartSummary.peakBookings} bookings)
+                        </span>
+                      </div>
+                      <div className="bg-green-50 rounded-lg px-2 py-1 border border-green-200">
+                        <span className="text-xs text-green-600 font-medium">
+                          Total: ₹{chartSummary.totalEarnings?.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <ResponsiveContainer width="100%" height={400}>
-                <RechartsLineChart data={dayWiseData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <RechartsLineChart data={revenueBookingData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -449,6 +503,15 @@ const OYODashboard = () => {
                   />
                 </RechartsLineChart>
               </ResponsiveContainer>
+
+              {revenueBookingData.length === 0 && !loading && selectedHotels.length > 0 && (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No data available for the selected period</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -463,14 +526,25 @@ const OYODashboard = () => {
                 </h2>
                 <p className="text-gray-600">Daily booking patterns and trends</p>
               </div>
-              <div className="flex space-x-2">
-                <div className="bg-white rounded-lg px-3 py-1 shadow-sm border border-purple-200">
-                  <span className="text-xs text-purple-600 font-medium">Peak: {Math.max(...dayWiseData.map(d => d.bookings))} bookings</span>
+              {dailyBookingsData.length > 0 && bookingAnalytics && (
+                <div className="flex space-x-2">
+                  <div className="bg-white rounded-lg px-3 py-1 shadow-sm border border-purple-200">
+                    <span className="text-xs text-purple-600 font-medium">
+                      Peak: {bookingAnalytics.peakBookings} bookings ({bookingAnalytics.peakBookingDay})
+                    </span>
+                  </div>
+                  <div className="bg-white rounded-lg px-3 py-1 shadow-sm border border-purple-200">
+                    <span className="text-xs text-purple-600 font-medium">
+                      Avg: {Math.round(bookingAnalytics.averageBookingsPerDay)} bookings/day
+                    </span>
+                  </div>
+                  <div className="bg-white rounded-lg px-3 py-1 shadow-sm border border-purple-200">
+                    <span className="text-xs text-purple-600 font-medium">
+                      Total: {bookingAnalytics.totalBookings} bookings
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-white rounded-lg px-3 py-1 shadow-sm border border-purple-200">
-                  <span className="text-xs text-purple-600 font-medium">Avg: {Math.round(dayWiseData.reduce((sum, d) => sum + d.bookings, 0) / dayWiseData.length)} bookings</span>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
@@ -487,7 +561,7 @@ const OYODashboard = () => {
               </div>
 
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={dayWiseData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <BarChart data={dailyBookingsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.8}/>
@@ -524,10 +598,18 @@ const OYODashboard = () => {
                   />
                 </BarChart>
               </ResponsiveContainer>
+
+              {dailyBookingsData.length === 0 && !loading && selectedHotels.length > 0 && (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No booking data available for the selected period</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

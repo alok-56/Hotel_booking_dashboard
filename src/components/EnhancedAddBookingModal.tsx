@@ -1,19 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Minus, ChevronDown, Calendar as CalendarIcon, User, Mail, Phone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { getAllHotels } from '@/api/Services/Hotel/hotel';
-import RoomAvailabilityChecker from './RoomAvailabilityChecker';
-import BookingCheckout from './BookingCheckout';
-import { FormSkeleton } from './SkeletonLoader';
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Plus,
+  Minus,
+  ChevronDown,
+  Calendar as CalendarIcon,
+  User,
+  Mail,
+  Phone,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { getAllHotels } from "@/api/Services/Hotel/hotel";
+import RoomAvailabilityChecker from "./RoomAvailabilityChecker";
+import BookingCheckout from "./BookingCheckout";
+import { FormSkeleton } from "./SkeletonLoader";
 
 interface Hotel {
   _id: string;
@@ -28,7 +47,7 @@ interface UserInfo {
   phone: string;
   email: string;
   age: number;
-  gender: 'male' | 'female' | 'other';
+  gender: "male" | "female" | "other";
 }
 
 interface AddBookingModalProps {
@@ -36,28 +55,34 @@ interface AddBookingModalProps {
   onSuccess?: () => void;
 }
 
-const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSuccess }) => {
+const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
+  onClose,
+  onSuccess,
+}) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Form data
-  const [selectedHotel, setSelectedHotel] = useState('');
+  const [selectedHotel, setSelectedHotel] = useState("");
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [checkOutDate, setCheckOutDate] = useState<Date>();
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [userInfo, setUserInfo] = useState<UserInfo[]>([{
-    name: '',
-    phone: '',
-    email: '',
-    age: 18,
-    gender: 'male'
-  }]);
-  const [selectedRoomType, setSelectedRoomType] = useState('');
+  const [userInfo, setUserInfo] = useState<UserInfo[]>([
+    {
+      name: "",
+      phone: "",
+      email: "",
+      age: 18,
+      gender: "male",
+    },
+  ]);
+  const [selectedRoomType, setSelectedRoomType] = useState("");
+  const [selectedRoomId,setSelectedRoomId]=useState("")
   const [selectedRoomPrice, setSelectedRoomPrice] = useState(0);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     loadHotels();
@@ -88,19 +113,24 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
 
   const calculateNights = () => {
     if (checkInDate && checkOutDate) {
-      return Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+      return Math.ceil(
+        (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
     }
     return 0;
   };
 
   const addUserInfo = () => {
-    setUserInfo([...userInfo, {
-      name: '',
-      phone: '',
-      email: '',
-      age: 18,
-      gender: 'male'
-    }]);
+    setUserInfo([
+      ...userInfo,
+      {
+        name: "",
+        phone: "",
+        email: "",
+        age: 18,
+        gender: "male",
+      },
+    ]);
   };
 
   const removeUserInfo = (index: number) => {
@@ -124,7 +154,7 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
       });
       return false;
     }
-    
+
     if (checkInDate >= checkOutDate) {
       toast({
         title: "Invalid Dates",
@@ -133,12 +163,12 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
       });
       return false;
     }
-    
+
     return true;
   };
 
   const validateStep2 = () => {
-    if (!selectedRoomType || selectedRoomPrice === 0) {
+    if (!selectedRoomType || selectedRoomPrice === 0 || !selectedRoomId) {
       toast({
         title: "Missing Information",
         description: "Please select a room",
@@ -172,9 +202,10 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
     }
   };
 
-  const handleRoomSelect = (roomType: string, price: number) => {
+  const handleRoomSelect = (roomType: string, price: number, _id: string) => {
     setSelectedRoomType(roomType);
     setSelectedRoomPrice(price);
+    setSelectedRoomId(_id)
   };
 
   const handleBookingSuccess = () => {
@@ -184,11 +215,16 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return 'Select Hotel & Dates';
-      case 2: return 'Choose Room';
-      case 3: return 'Guest Information';
-      case 4: return 'Review & Payment';
-      default: return 'Add Booking';
+      case 1:
+        return "Select Hotel & Dates";
+      case 2:
+        return "Choose Room";
+      case 3:
+        return "Guest Information";
+      case 4:
+        return "Review & Payment";
+      default:
+        return "Add Booking";
     }
   };
 
@@ -211,17 +247,19 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{getStepTitle()}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {getStepTitle()}
+              </h2>
               <div className="flex items-center mt-2 space-x-2">
                 {[1, 2, 3, 4].map((step) => (
                   <div
                     key={step}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       step === currentStep
-                        ? 'bg-blue-600 text-white'
+                        ? "bg-blue-600 text-white"
                         : step < currentStep
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-200 text-gray-600'
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-200 text-gray-600"
                     }`}
                   >
                     {step}
@@ -273,7 +311,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {checkInDate ? format(checkInDate, "PPP") : "Select date"}
+                        {checkInDate
+                          ? format(checkInDate, "PPP")
+                          : "Select date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -299,7 +339,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {checkOutDate ? format(checkOutDate, "PPP") : "Select date"}
+                        {checkOutDate
+                          ? format(checkOutDate, "PPP")
+                          : "Select date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -325,7 +367,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="px-4 py-2 text-sm font-medium">{adults}</span>
+                    <span className="px-4 py-2 text-sm font-medium">
+                      {adults}
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -346,7 +390,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="px-4 py-2 text-sm font-medium">{children}</span>
+                    <span className="px-4 py-2 text-sm font-medium">
+                      {children}
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -360,22 +406,26 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
 
               {checkInDate && checkOutDate && (
                 <div className="text-sm text-gray-600">
-                  Duration: {calculateNights()} night{calculateNights() !== 1 ? 's' : ''}
+                  Duration: {calculateNights()} night
+                  {calculateNights() !== 1 ? "s" : ""}
                 </div>
               )}
             </div>
           )}
 
           {/* Step 2: Room Selection */}
-          {currentStep === 2 && selectedHotel && checkInDate && checkOutDate && (
-            <RoomAvailabilityChecker
-              hotelId={selectedHotel}
-              checkInDate={checkInDate.toISOString()}
-              checkOutDate={checkOutDate.toISOString()}
-              onRoomSelect={handleRoomSelect}
-              selectedRoomType={selectedRoomType}
-            />
-          )}
+          {currentStep === 2 &&
+            selectedHotel &&
+            checkInDate &&
+            checkOutDate && (
+              <RoomAvailabilityChecker
+                hotelId={selectedHotel}
+                checkInDate={checkInDate.toISOString()}
+                checkOutDate={checkOutDate.toISOString()}
+                onRoomSelect={handleRoomSelect}
+                selectedRoomType={selectedRoomType}
+              />
+            )}
 
           {/* Step 3: Guest Information */}
           {currentStep === 3 && (
@@ -389,10 +439,13 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
               </div>
 
               {userInfo.map((user, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-4">
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-4 space-y-4"
+                >
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">
-                      {index === 0 ? 'Primary Guest' : `Guest ${index + 1}`}
+                      {index === 0 ? "Primary Guest" : `Guest ${index + 1}`}
                     </h4>
                     {index > 0 && (
                       <Button
@@ -410,7 +463,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                       <Label>Full Name *</Label>
                       <Input
                         value={user.name}
-                        onChange={(e) => updateUserInfo(index, 'name', e.target.value)}
+                        onChange={(e) =>
+                          updateUserInfo(index, "name", e.target.value)
+                        }
                         placeholder="Enter full name"
                       />
                     </div>
@@ -419,7 +474,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                       <Label>Phone Number *</Label>
                       <Input
                         value={user.phone}
-                        onChange={(e) => updateUserInfo(index, 'phone', e.target.value)}
+                        onChange={(e) =>
+                          updateUserInfo(index, "phone", e.target.value)
+                        }
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -429,7 +486,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                       <Input
                         type="email"
                         value={user.email}
-                        onChange={(e) => updateUserInfo(index, 'email', e.target.value)}
+                        onChange={(e) =>
+                          updateUserInfo(index, "email", e.target.value)
+                        }
                         placeholder="Enter email address"
                       />
                     </div>
@@ -439,7 +498,13 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                       <Input
                         type="number"
                         value={user.age}
-                        onChange={(e) => updateUserInfo(index, 'age', parseInt(e.target.value) || 18)}
+                        onChange={(e) =>
+                          updateUserInfo(
+                            index,
+                            "age",
+                            parseInt(e.target.value) || 18
+                          )
+                        }
                         min="1"
                         max="120"
                       />
@@ -449,7 +514,9 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
                       <Label>Gender</Label>
                       <Select
                         value={user.gender}
-                        onValueChange={(value) => updateUserInfo(index, 'gender', value)}
+                        onValueChange={(value) =>
+                          updateUserInfo(index, "gender", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -482,13 +549,13 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
             <BookingCheckout
               bookingData={{
                 hotelId: selectedHotel,
-                roomId: [selectedRoomType], // This should be room ID, but we're using room type for now
+                roomId: [selectedRoomId], // This should be room ID, but we're using room type for now
                 checkInDate: checkInDate!.toISOString(),
                 checkOutDate: checkOutDate!.toISOString(),
                 userInfo,
                 guests: { adults, children },
                 roomPrice: selectedRoomPrice,
-                nights: calculateNights()
+                nights: calculateNights(),
               }}
               onSuccess={handleBookingSuccess}
               onCancel={onClose}
@@ -502,12 +569,14 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({ onClose, onSu
             <div className="flex justify-between">
               <Button
                 variant="outline"
-                onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : onClose()}
+                onClick={() =>
+                  currentStep > 1 ? setCurrentStep(currentStep - 1) : onClose()
+                }
               >
-                {currentStep === 1 ? 'Cancel' : 'Back'}
+                {currentStep === 1 ? "Cancel" : "Back"}
               </Button>
               <Button onClick={handleNext}>
-                {currentStep === 3 ? 'Review Booking' : 'Next'}
+                {currentStep === 3 ? "Review Booking" : "Next"}
               </Button>
             </div>
           </div>

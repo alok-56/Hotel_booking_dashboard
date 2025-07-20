@@ -7,6 +7,7 @@ import { searchRooms } from '@/api/Services/Hotel/hotel';
 import { useToast } from '@/hooks/use-toast';
 
 interface RoomAvailability {
+  _id: string;
   roomType: string;
   totalAvailable: number;
   currentlyBooked: number;
@@ -19,7 +20,7 @@ interface RoomAvailabilityCheckerProps {
   hotelId: string;
   checkInDate: string;
   checkOutDate: string;
-  onRoomSelect: (roomType: string, price: number) => void;
+  onRoomSelect: (roomType: string, price: number,_id:string) => void;
   selectedRoomType?: string;
 }
 
@@ -157,6 +158,7 @@ const RoomAvailabilityChecker: React.FC<RoomAvailabilityCheckerProps> = ({
             {availability.map((room, index) => {
               const status = getAvailabilityStatus(room.availableUnits);
               const isSelected = selectedRoomType === room.roomType;
+              {console.log(room)}
               
               return (
                 <div
@@ -168,7 +170,7 @@ const RoomAvailabilityChecker: React.FC<RoomAvailabilityCheckerProps> = ({
                         ? 'border-gray-200 hover:border-gray-300 cursor-pointer' 
                         : 'border-gray-200 opacity-60'
                   }`}
-                  onClick={() => room.availableUnits > 0 && onRoomSelect(room.roomType, room.price)}
+                  onClick={() => room.availableUnits > 0 && onRoomSelect(room.roomType, room.price,room._id)}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-2">

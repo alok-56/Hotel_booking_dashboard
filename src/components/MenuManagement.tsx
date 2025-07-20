@@ -66,7 +66,7 @@ const MenuManagement = () => {
     try {
       setLoading(true);
       const response = await getAllMenus();
-      if (response.success) {
+      if (response.status) {
         setMenuItems(response.data || []);
       } else {
         toast({
@@ -120,7 +120,7 @@ const MenuManagement = () => {
       };
 
       const response = await createMenu(payload);
-      if (response.success) {
+      if (response.status) {
         loadMenus(); // Refresh the menu list
         resetForm();
         setIsModalOpen(false);
@@ -158,8 +158,8 @@ const MenuManagement = () => {
       };
 
       const response = await updateMenu(editingMenu._id, payload);
-      if (response.success) {
-        loadMenus(); // Refresh the menu list
+      if (response.status) {
+        loadMenus(); 
         resetForm();
         setIsModalOpen(false);
         setEditingMenu(null);
@@ -190,8 +190,8 @@ const MenuManagement = () => {
     if (confirmed) {
       try {
         const response = await deleteMenu(id);
-        if (response.success) {
-          loadMenus(); // Refresh the menu list
+        if (response.status) {
+          loadMenus(); 
           toast({
             title: "Success",
             description: "Menu item deleted successfully!",

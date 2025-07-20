@@ -13,8 +13,7 @@ export const createOfflineBooking = async (payload: any): Promise<any> => {
   });
 
   const data = await res.json();
-  if (!res.ok || !data.status)
-    throw new Error(data.message || "Offline booking failed");
+  
   return data;
 };
 
@@ -26,8 +25,7 @@ export const getAllBookings = async (): Promise<any> => {
   });
 
   const data = await res.json();
-  if (!res.ok || !data.status)
-    throw new Error(data.message || "Fetching bookings failed");
+  
   return data;
 };
 
@@ -45,8 +43,7 @@ export const updateBookingStatus = async (
   });
 
   const data = await res.json();
-  if (!res.ok || !data.status)
-    throw new Error(data.message || "Updating status failed");
+ 
   return data;
 };
 
@@ -58,7 +55,87 @@ export const getAllBookingPayments = async (): Promise<any> => {
   });
 
   const data = await res.json();
-  if (!res.ok || !data.status)
-    throw new Error(data.message || "Fetching payments failed");
+
+  return data;
+};
+
+export const createAddon = async (
+  bookingId: string,
+  addon: [{ serviceName: string; cost: number; status?: string }]
+): Promise<any> => {
+  const res = await fetch(`${BASEURL}/booking/${bookingId}/addon`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      token: TOKEN() || "",
+    },
+    body: JSON.stringify(addon),
+  });
+
+  const data = await res.json();
+  return data;
+};
+
+export const updateAddon = async (
+  bookingId: string,
+  payload: {
+    index: number;
+    newServiceName?: string;
+    newCost?: number;
+    status: "paid" | "pending";
+  }
+): Promise<any> => {
+  const res = await fetch(`${BASEURL}/booking/${bookingId}/addon`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      token: TOKEN() || "",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  return data;
+};
+
+
+export const deleteAddon = async (
+  bookingId: string,
+  payload: {
+    index: number;
+    status: "paid" | "pending";
+  }
+): Promise<any> => {
+  const res = await fetch(`${BASEURL}/booking/${bookingId}/addon`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      token: TOKEN() || "",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  return data;
+};
+
+
+export const getGuestStatusHistory = async (
+  startDate: string,
+  endDate: string
+): Promise<any> => {
+  const res = await fetch(
+    `${BASEURL}/booking/status-history?startDate=${startDate}&endDate=${endDate}`,
+    {
+      headers: {
+        token: TOKEN() || "",
+      },
+    }
+  );
+
+  const data = await res.json();
+
   return data;
 };

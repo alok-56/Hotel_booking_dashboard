@@ -60,7 +60,7 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
       submenu: [
         { id: 'booking-report', label: 'Booking', icon: Calendar },
         { id: 'earning-report', label: 'Earning', icon: DollarSign },
-        { id: 'room-wise-earning', label: 'Room wise earning', icon: TrendingUp }
+
       ]
     }
   ];
@@ -70,8 +70,8 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
       {/* Logo */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center space-x-2">
-          <div className="bg-red-600 text-white px-2 py-1 rounded font-bold text-sm">OYO</div>
-          <span className="font-semibold text-gray-800">OS</span>
+          <div className="bg-red-600 text-white px-2 py-1 rounded font-bold text-sm">BRILL</div>
+          <span className="font-semibold text-gray-800">ROOMS</span>
         </div>
       </div>
 
@@ -154,10 +154,10 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
       <div className="border-t border-gray-200 p-4">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-gray-600">MN</span>
+            <span className="text-xs font-medium text-gray-600">AD</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">Md Naz...</p>
+            <p className="text-sm font-medium text-gray-900 truncate">Admin@gmail.com</p>
           </div>
           <button 
             className="text-gray-400 hover:text-gray-600"

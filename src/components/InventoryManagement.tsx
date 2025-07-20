@@ -1,106 +1,139 @@
-import React, { useState } from 'react';
-import { Package, Plus, Search, Filter, Calendar, Building, ChevronDown, TrendingUp, TrendingDown, AlertTriangle, Bed, Users, Home, BarChart3 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Calendar,
+  Building,
+  ChevronDown,
+  Bed,
+  Users,
+  Home,
+  BarChart3,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getRoomOccupancyReport } from "@/api/Services/Report/report";
+import { getAllHotels } from "@/api/Services/Hotel/hotel"; // Add this import
 
-const InventoryManagement = () => {
-  const [selectedHotels, setSelectedHotels] = useState(['hotel1']);
-  const [startDate, setStartDate] = useState('2024-07-14');
-  const [endDate, setEndDate] = useState('2024-07-20');
-  const [searchQuery, setSearchQuery] = useState('');
+const RoomOccupancyDashboard = () => {
+  const [selectedHotels, setSelectedHotels] = useState([]);
+  const [startDate, setStartDate] = useState("2025-07-20");
+  const [endDate, setEndDate] = useState("2025-07-25");
   const [showHotelDropdown, setShowHotelDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState('rooms');
+  const [roomData, setRoomData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [hotels, setHotels] = useState([]);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const hotels = [
-    { id: 'hotel1', name: 'Grand Plaza Hotel', location: 'Mumbai', totalRooms: 150 },
-    { id: 'hotel2', name: 'Royal Residency', location: 'Delhi', totalRooms: 120 },
-    { id: 'hotel3', name: 'Ocean View Resort', location: 'Goa', totalRooms: 200 },
-    { id: 'hotel4', name: 'Mountain Lodge', location: 'Shimla', totalRooms: 80 }
-  ];
-
-  // Sample room data for different hotels and dates
-  const roomData = {
-    hotel1: {
-      '2024-07-14': { totalRooms: 150, soldRooms: 120, availableRooms: 30, occupancyRate: 80 },
-      '2024-07-15': { totalRooms: 150, soldRooms: 135, availableRooms: 15, occupancyRate: 90 },
-      '2024-07-16': { totalRooms: 150, soldRooms: 145, availableRooms: 5, occupancyRate: 97 },
-      '2024-07-17': { totalRooms: 150, soldRooms: 142, availableRooms: 8, occupancyRate: 95 },
-      '2024-07-18': { totalRooms: 150, soldRooms: 138, availableRooms: 12, occupancyRate: 92 },
-      '2024-07-19': { totalRooms: 150, soldRooms: 125, availableRooms: 25, occupancyRate: 83 },
-      '2024-07-20': { totalRooms: 150, soldRooms: 110, availableRooms: 40, occupancyRate: 73 }
-    },
-    hotel2: {
-      '2024-07-14': { totalRooms: 120, soldRooms: 85, availableRooms: 35, occupancyRate: 71 },
-      '2024-07-15': { totalRooms: 120, soldRooms: 95, availableRooms: 25, occupancyRate: 79 },
-      '2024-07-16': { totalRooms: 120, soldRooms: 110, availableRooms: 10, occupancyRate: 92 },
-      '2024-07-17': { totalRooms: 120, soldRooms: 105, availableRooms: 15, occupancyRate: 88 },
-      '2024-07-18': { totalRooms: 120, soldRooms: 100, availableRooms: 20, occupancyRate: 83 },
-      '2024-07-19': { totalRooms: 120, soldRooms: 90, availableRooms: 30, occupancyRate: 75 },
-      '2024-07-20': { totalRooms: 120, soldRooms: 80, availableRooms: 40, occupancyRate: 67 }
-    },
-    hotel3: {
-      '2024-07-14': { totalRooms: 200, soldRooms: 180, availableRooms: 20, occupancyRate: 90 },
-      '2024-07-15': { totalRooms: 200, soldRooms: 190, availableRooms: 10, occupancyRate: 95 },
-      '2024-07-16': { totalRooms: 200, soldRooms: 195, availableRooms: 5, occupancyRate: 98 },
-      '2024-07-17': { totalRooms: 200, soldRooms: 185, availableRooms: 15, occupancyRate: 93 },
-      '2024-07-18': { totalRooms: 200, soldRooms: 175, availableRooms: 25, occupancyRate: 88 },
-      '2024-07-19': { totalRooms: 200, soldRooms: 160, availableRooms: 40, occupancyRate: 80 },
-      '2024-07-20': { totalRooms: 200, soldRooms: 150, availableRooms: 50, occupancyRate: 75 }
-    },
-    hotel4: {
-      '2024-07-14': { totalRooms: 80, soldRooms: 60, availableRooms: 20, occupancyRate: 75 },
-      '2024-07-15': { totalRooms: 80, soldRooms: 70, availableRooms: 10, occupancyRate: 88 },
-      '2024-07-16': { totalRooms: 80, soldRooms: 75, availableRooms: 5, occupancyRate: 94 },
-      '2024-07-17': { totalRooms: 80, soldRooms: 72, availableRooms: 8, occupancyRate: 90 },
-      '2024-07-18': { totalRooms: 80, soldRooms: 68, availableRooms: 12, occupancyRate: 85 },
-      '2024-07-19': { totalRooms: 80, soldRooms: 65, availableRooms: 15, occupancyRate: 81 },
-      '2024-07-20': { totalRooms: 80, soldRooms: 55, availableRooms: 25, occupancyRate: 69 }
+  // Fetch hotels from API
+  const fetchHotels = async () => {
+    setHotelsLoading(true);
+    setError(null);
+    try {
+      const response = await getAllHotels();
+      if (response.status && response.data) {
+        // Transform API data to match the expected format
+        const transformedHotels = response.data.map(hotel => ({
+          id: hotel._id,
+          name: hotel.hotelName,
+          location: `${hotel.city}, ${hotel.state}`,
+          totalRooms: hotel.totalRooms || 100, // Default value if not provided in API
+          brand: hotel.brand,
+          starRating: hotel.starRating,
+          propertyType: hotel.propertyType,
+          address: hotel.address,
+          country: hotel.country,
+        }));
+        setHotels(transformedHotels);
+        
+        // Auto-select the first hotel if available
+        if (transformedHotels.length > 0) {
+          setSelectedHotels([transformedHotels[0].id]);
+        }
+      } else {
+        setError("Failed to fetch hotels");
+      }
+    } catch (error) {
+      console.error("Error fetching hotels:", error);
+      setError("Error loading hotels. Please try again.");
+    } finally {
+      setHotelsLoading(false);
     }
   };
 
-  const inventoryData = {
-    hotel1: {
-      items: [
-        { id: 1, name: 'Premium Towels', category: 'Linens', quantity: 150, minStock: 50, status: 'In Stock', trend: 'up', usage: 45 },
-        { id: 2, name: 'Egyptian Cotton Sheets', category: 'Linens', quantity: 200, minStock: 75, status: 'In Stock', trend: 'stable', usage: 32 },
-        { id: 3, name: 'Luxury Toiletries Set', category: 'Bathroom', quantity: 25, minStock: 30, status: 'Low Stock', trend: 'down', usage: 78 },
-        { id: 4, name: 'Eco-Friendly Cleaning Supplies', category: 'Maintenance', quantity: 80, minStock: 40, status: 'In Stock', trend: 'up', usage: 52 }
-      ]
-    },
-    hotel2: {
-      items: [
-        { id: 5, name: 'Standard Towels', category: 'Linens', quantity: 120, minStock: 40, status: 'In Stock', trend: 'stable', usage: 38 },
-        { id: 6, name: 'Cotton Bed Sheets', category: 'Linens', quantity: 180, minStock: 60, status: 'In Stock', trend: 'up', usage: 42 },
-        { id: 7, name: 'Basic Toiletries', category: 'Bathroom', quantity: 15, minStock: 25, status: 'Low Stock', trend: 'down', usage: 85 },
-        { id: 8, name: 'Standard Cleaning Kit', category: 'Maintenance', quantity: 60, minStock: 30, status: 'In Stock', trend: 'stable', usage: 48 }
-      ]
+  // Fetch room occupancy data
+  const fetchRoomOccupancyData = async () => {
+    if (selectedHotels.length === 0) {
+      setError("Please select at least one hotel");
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getRoomOccupancyReport(startDate, endDate);
+      if (response.status) {
+        console.log(response.data);
+        setRoomData(response.data);
+      } else {
+        setError("Failed to fetch room occupancy data");
+      }
+    } catch (error) {
+      console.error("Error fetching room occupancy data:", error);
+      setError("Error loading occupancy data. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Initialize hotels when component mounts
+  useEffect(() => {
+    fetchHotels();
+  }, []);
+
+  // Fetch occupancy data when component mounts or dates/hotels change
+  useEffect(() => {
+    if (startDate && endDate && selectedHotels.length > 0 && !hotelsLoading) {
+      fetchRoomOccupancyData();
+    }
+  }, [startDate, endDate, selectedHotels, hotelsLoading]);
 
   const generateDateRange = (start, end) => {
     const dates = [];
     const startDate = new Date(start);
     const endDate = new Date(end);
-    
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      dates.push(new Date(d).toISOString().split('T')[0]);
+
+    for (
+      let d = new Date(startDate);
+      d <= endDate;
+      d.setDate(d.getDate() + 1)
+    ) {
+      dates.push(new Date(d).toISOString().split("T")[0]);
     }
-    
+
     return dates;
   };
 
   const getDayName = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { weekday: 'long' });
+    return date.toLocaleDateString("en-US", { weekday: "long" });
   };
 
   const getFormattedDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -111,7 +144,7 @@ const InventoryManagement = () => {
     let totalOccupancy = 0;
     let hotelCount = 0;
 
-    selectedHotels.forEach(hotelId => {
+    selectedHotels.forEach((hotelId) => {
       if (roomData[hotelId] && roomData[hotelId][date]) {
         const data = roomData[hotelId][date];
         totalRooms += data.totalRooms;
@@ -126,112 +159,201 @@ const InventoryManagement = () => {
       totalRooms,
       soldRooms,
       availableRooms,
-      avgOccupancyRate: hotelCount > 0 ? Math.round(totalOccupancy / hotelCount) : 0
+      avgOccupancyRate:
+        hotelCount > 0 ? Math.round(totalOccupancy / hotelCount) : 0,
     };
   };
 
-  const getInventoryData = () => {
-    const combinedItems = [];
-    selectedHotels.forEach(hotelId => {
-      if (inventoryData[hotelId]) {
-        inventoryData[hotelId].items.forEach(item => {
-          combinedItems.push({
-            ...item,
-            hotel: hotels.find(h => h.id === hotelId)?.name
-          });
-        });
-      }
-    });
-    return combinedItems;
-  };
-
-  const dateRange = generateDateRange(startDate, endDate);
-  const inventoryItems = getInventoryData();
-  const filteredItems = inventoryItems.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const handleHotelToggle = (hotelId) => {
-    setSelectedHotels(prev => 
-      prev.includes(hotelId) 
-        ? prev.filter(id => id !== hotelId)
-        : [...prev, hotelId]
-    );
-  };
-
-  const getTrendIcon = (trend) => {
-    switch(trend) {
-      case 'up': return <TrendingUp className="h-3 w-3 text-green-500" />;
-      case 'down': return <TrendingDown className="h-3 w-3 text-red-500" />;
-      default: return <div className="h-3 w-3 rounded-full bg-gray-400" />;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'In Stock': return 'bg-green-100 text-green-800';
-      case 'Low Stock': return 'bg-orange-100 text-orange-800';
-      case 'Out of Stock': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    setSelectedHotels((prev) => {
+      const newSelection = prev.includes(hotelId)
+        ? prev.filter((id) => id !== hotelId)
+        : [...prev, hotelId];
+      
+      // Ensure at least one hotel is selected
+      return newSelection.length === 0 ? prev : newSelection;
+    });
   };
 
   const getOccupancyColor = (rate) => {
-    if (rate >= 90) return 'bg-green-500';
-    if (rate >= 70) return 'bg-yellow-500';
-    if (rate >= 50) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (rate >= 90) return "bg-green-500";
+    if (rate >= 70) return "bg-yellow-500";
+    if (rate >= 50) return "bg-orange-500";
+    return "bg-red-500";
   };
+
+  const getTotalStats = () => {
+    const dateRange = generateDateRange(startDate, endDate);
+    let totalRooms = 0;
+    let totalSoldRooms = 0;
+    let totalAvailableRooms = 0;
+    let totalOccupancy = 0;
+    let dateCount = 0;
+
+    dateRange.forEach((date) => {
+      const data = getRoomDataForDate(date);
+      totalRooms += data.totalRooms;
+      totalSoldRooms += data.soldRooms;
+      totalAvailableRooms += data.availableRooms;
+      totalOccupancy += data.avgOccupancyRate;
+      if (data.totalRooms > 0) dateCount++;
+    });
+
+    return {
+      totalRooms,
+      totalSoldRooms,
+      totalAvailableRooms,
+      avgOccupancy: dateCount > 0 ? Math.round(totalOccupancy / dateCount) : 0,
+    };
+  };
+
+  const getSelectedHotelsText = () => {
+    if (selectedHotels.length === 0) return "No hotels selected";
+    if (selectedHotels.length === 1) {
+      const hotel = hotels.find((h) => h.id === selectedHotels[0]);
+      return hotel ? hotel.name : "1 hotel selected";
+    }
+    return `${selectedHotels.length} hotels selected`;
+  };
+
+  const dateRange = generateDateRange(startDate, endDate);
+  const totalStats = getTotalStats();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hotel Inventory</h1>
-          <p className="text-gray-600">Monitor room availability and inventory across selected properties</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Hotel Room Occupancy
+          </h1>
+          <p className="text-gray-600">
+            Monitor room availability and occupancy rates across selected properties
+          </p>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <Card className="mb-6 border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="h-5 w-5" />
+                <span>{error}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Overall Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Rooms</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalStats.totalRooms}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Home className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Rooms Sold</p>
+                  <p className="text-2xl font-bold text-green-600">{totalStats.totalSoldRooms}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Available Rooms</p>
+                  <p className="text-2xl font-bold text-blue-600">{totalStats.totalAvailableRooms}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Bed className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Avg Occupancy</p>
+                  <p className="text-2xl font-bold text-purple-600">{totalStats.avgOccupancy}%</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters Section */}
         <Card className="mb-6 border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Hotel Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <Building className="h-4 w-4" />
                   Select Hotels
+                  {hotelsLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                 </label>
                 <div className="relative">
                   <Button
                     variant="outline"
                     className="w-full justify-between"
                     onClick={() => setShowHotelDropdown(!showHotelDropdown)}
+                    disabled={hotelsLoading || hotels.length === 0}
                   >
                     <span className="truncate">
-                      {selectedHotels.length === 1 
-                        ? hotels.find(h => h.id === selectedHotels[0])?.name
-                        : `${selectedHotels.length} hotels selected`}
+                      {hotelsLoading ? "Loading hotels..." : getSelectedHotelsText()}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
-                  
-                  {showHotelDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+
+                  {showHotelDropdown && !hotelsLoading && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
                       <div className="py-1">
-                        {hotels.map(hotel => (
-                          <label key={hotel.id} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                        {hotels.map((hotel) => (
+                          <label
+                            key={hotel.id}
+                            className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                          >
                             <input
                               type="checkbox"
                               checked={selectedHotels.includes(hotel.id)}
                               onChange={() => handleHotelToggle(hotel.id)}
                               className="mr-3"
                             />
-                            <div>
-                              <div className="font-medium text-sm">{hotel.name}</div>
-                              <div className="text-xs text-gray-500">{hotel.location} • {hotel.totalRooms} rooms</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">
+                                {hotel.name}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {hotel.location} • {hotel.totalRooms} rooms
+                                {hotel.starRating && ` • ${hotel.starRating}★`}
+                              </div>
+                              {hotel.brand && (
+                                <div className="text-xs text-gray-400 truncate">
+                                  {hotel.brand} • {hotel.propertyType}
+                                </div>
+                              )}
                             </div>
                           </label>
                         ))}
@@ -267,245 +389,170 @@ const InventoryManagement = () => {
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Search */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Search className="h-4 w-4" />
-                  Search Items
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search inventory items..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
+            {/* Action Buttons */}
+            <div className="mt-4 flex justify-between">
+              <Button 
+                variant="outline"
+                onClick={fetchHotels}
+                disabled={hotelsLoading}
+                className="flex items-center gap-2"
+              >
+                {hotelsLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading Hotels...
+                  </>
+                ) : (
+                  <>
+                    <Building className="h-4 w-4" />
+                    Refresh Hotels
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                onClick={fetchRoomOccupancyData}
+                disabled={loading || selectedHotels.length === 0}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="h-4 w-4" />
+                    Refresh Data
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6">
-          <Button
-            variant={activeTab === 'rooms' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('rooms')}
-            className="flex items-center gap-2"
-          >
-            <Bed className="h-4 w-4" />
-            Room Availability
-          </Button>
-          <Button
-            variant={activeTab === 'inventory' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('inventory')}
-            className="flex items-center gap-2"
-          >
-            <Package className="h-4 w-4" />
-            Inventory Management
-          </Button>
-        </div>
-
-        {/* Room Availability Tab */}
-        {activeTab === 'rooms' && (
-          <div>
-            {/* Room Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {dateRange.map(date => {
-                const data = getRoomDataForDate(date);
-                return (
-                  <Card key={date} className="border-0 shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-600 mb-1">{getDayName(date)}</div>
-                        <div className="text-lg font-bold text-gray-900 mb-2">{getFormattedDate(date)}</div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Total Rooms:</span>
-                            <span className="font-medium">{data.totalRooms}</span>
+        {/* Room Availability Cards */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading room occupancy data...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {dateRange.map((date) => {
+              const data = getRoomDataForDate(date);
+              return (
+                <Card key={date} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-600 mb-1">
+                        {getDayName(date)}
+                      </div>
+                      <div className="text-lg font-bold text-gray-900 mb-4">
+                        {getFormattedDate(date)}
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-600">Total Rooms:</span>
+                            <span className="font-semibold text-gray-900">
+                              {data.totalRooms}
+                            </span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span>Sold:</span>
-                            <span className="font-medium text-green-600">{data.soldRooms}</span>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-600">Sold:</span>
+                            <span className="font-semibold text-green-600">
+                              {data.soldRooms}
+                            </span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span>Available:</span>
-                            <span className="font-medium text-blue-600">{data.availableRooms}</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Available:</span>
+                            <span className="font-semibold text-blue-600">
+                              {data.availableRooms}
+                            </span>
                           </div>
-                          <div className="mt-3">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span>Occupancy</span>
-                              <span className="font-medium">{data.avgOccupancyRate}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${getOccupancyColor(data.avgOccupancyRate)}`}
-                                style={{ width: `${data.avgOccupancyRate}%` }}
-                              />
-                            </div>
+                        </div>
+                        
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs mb-2">
+                            <span className="text-gray-600">Occupancy Rate</span>
+                            <span className="font-semibold text-gray-900">
+                              {data.avgOccupancyRate}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className={`h-3 rounded-full transition-all duration-300 ${getOccupancyColor(
+                                data.avgOccupancyRate
+                              )}`}
+                              style={{ width: `${data.avgOccupancyRate}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1 text-center">
+                            {data.avgOccupancyRate >= 90 && "Excellent"}
+                            {data.avgOccupancyRate >= 70 && data.avgOccupancyRate < 90 && "Good"}
+                            {data.avgOccupancyRate >= 50 && data.avgOccupancyRate < 70 && "Average"}
+                            {data.avgOccupancyRate < 50 && "Low"}
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-           
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
-        {/* Inventory Management Tab */}
-        {activeTab === 'inventory' && (
-          <div>
-            {/* Actions Bar */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Advanced Filter
-                </Button>
-                <span className="text-sm text-gray-600">
-                  {filteredItems.length} items found
-                </span>
+        {/* No Data Message */}
+        {!loading && !hotelsLoading && (selectedHotels.length === 0 || dateRange.length === 0) && (
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                <Calendar className="h-12 w-12 mx-auto" />
               </div>
-             
-            </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Data Available
+              </h3>
+              <p className="text-gray-600">
+                {selectedHotels.length === 0 
+                  ? "Please select at least one hotel to view occupancy data."
+                  : "Please select a valid date range to view occupancy data."
+                }
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Inventory Table */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                <CardTitle className="text-xl">Inventory Items</CardTitle>
-                <CardDescription>
-                  Showing inventory for selected hotels from {getFormattedDate(startDate)} to {getFormattedDate(endDate)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Item Details</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Hotel</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Category</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Stock Level</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Usage</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
-                        <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredItems.map((item, index) => (
-                        <tr key={item.id} className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{item.name}</div>
-                                <div className="text-sm text-gray-500">ID: {item.id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="text-sm font-medium text-gray-900">{item.hotel}</div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {item.category}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm">
-                                <div className="font-medium">{item.quantity}</div>
-                                <div className="text-gray-500">Min: {item.minStock}</div>
-                              </div>
-                              <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full ${item.quantity <= item.minStock ? 'bg-red-500' : 'bg-green-500'}`}
-                                  style={{ width: `${Math.min((item.quantity / (item.minStock * 2)) * 100, 100)}%` }}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-medium">{item.usage}%</div>
-                              {getTrendIcon(item.trend)}
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              <Button variant="outline" size="sm" className="text-xs">
-                                Edit
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-xs">
-                                Reorder
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Low Stock Alert */}
-            <Card className="mt-6 border-0 shadow-lg border-l-4 border-l-orange-500">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <AlertTriangle className="h-6 w-6 text-orange-500" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Low Stock Alert</h3>
-                    <p className="text-gray-600 mb-4">
-                      {filteredItems.filter(item => item.status === 'Low Stock').length} items are running low on stock and need immediate attention.
-                    </p>
-                    <div className="space-y-2">
-                      {filteredItems
-                        .filter(item => item.status === 'Low Stock')
-                        .map(item => (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                            <div className="flex items-center gap-3">
-                              <Package className="h-4 w-4 text-orange-600" />
-                              <div>
-                                <div className="font-medium text-gray-900">{item.name}</div>
-                                <div className="text-sm text-gray-600">{item.hotel} • {item.category}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <div className="text-sm font-medium text-gray-900">{item.quantity} left</div>
-                                <div className="text-xs text-gray-500">Min: {item.minStock}</div>
-                              </div>
-                              <Button size="sm" variant="outline" className="text-orange-600 border-orange-300 hover:bg-orange-50">
-                                Reorder Now
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* No Hotels Available Message */}
+        {!hotelsLoading && hotels.length === 0 && (
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                <Building className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Hotels Available
+              </h3>
+              <p className="text-gray-600">
+                Unable to load hotels. Please check your connection and try refreshing.
+              </p>
+              <Button 
+                className="mt-4"
+                onClick={fetchHotels}
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
   );
 };
 
-export default InventoryManagement;
+export default RoomOccupancyDashboard;
