@@ -15,6 +15,8 @@ import ExpenseManagement from '../components/ExpenseManagement';
 import PaymentsManagement from '../components/PaymentsManagement';
 import BookingReport from '../components/BookingReport';
 import EarningReport from '../components/EarningReport';
+import SettingsScreen from '../components/SettingsScreen';
+import ProfileSection from '../components/ProfileSection';
 
 
 const Index = () => {
@@ -35,6 +37,8 @@ const Index = () => {
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userData');
     setIsAuthenticated(false);
   };
 
@@ -68,7 +72,10 @@ const Index = () => {
         return <BookingReport />;
       case 'earning-report':
         return <EarningReport />;
-     
+      case 'settings':
+        return <SettingsScreen />;
+      case 'profile':
+        return <ProfileSection />;
       default:
         return <OYODashboard />;
     }

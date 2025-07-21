@@ -44,6 +44,7 @@ export const createAdmin = async (admin: {
   Email: string;
   Password: string;
   Permission: string[];
+  Hotel?: string[];
 }) => {
   const res = await fetch(`${BASEURL}/admin/register`, {
     method: "POST",
@@ -64,8 +65,9 @@ export const updateAdmin = async (
   admin: {
     Name: string;
     Email: string;
-    Password: string;
+    Password?: string;
     Permission: string[];
+    Hotel?: string[];
   }
 ) => {
   const res = await fetch(`${BASEURL}/admin/update/${id}`, {

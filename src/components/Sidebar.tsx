@@ -3,8 +3,9 @@ import {
   TrendingUp, Calendar, DollarSign, Settings, Users,
   ChevronRight, ChevronDown, Package, Building, Bed,
   UtensilsCrossed, Receipt, CreditCard, BarChart3, Shield,
-  Globe, MessageSquare, Briefcase, LogOut
+  Globe, MessageSquare, Briefcase, LogOut, UserCircle
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface SidebarProps {
   activeSection: string;
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const { hasPermission, userData } = usePermissions();
 
   const toggleSubmenu = (menuId: string) => {
     setExpandedMenus(prev =>
@@ -60,10 +62,26 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
       submenu: [
         { id: 'booking-report', label: 'Booking', icon: Calendar },
         { id: 'earning-report', label: 'Earning', icon: DollarSign },
-
       ]
-    }
+    },
+    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'profile', label: 'Profile', icon: UserCircle }
   ];
+
+  // Filter menu items based on user permissions
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.hasSubmenu && item.submenu) {
+      // For menu items with submenus, check if user has permission for any submenu item
+      const allowedSubmenus = item.submenu.filter(subItem => hasPermission(subItem.id));
+      if (allowedSubmenus.length > 0) {
+        // Update the submenu to only show allowed items
+        item.submenu = allowedSubmenus;
+        return true;
+      }
+      return false;
+    }
+    return hasPermission(item.id);
+  });
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
@@ -77,7 +95,7 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
 
       {/* Menu Items */}
       <div className="flex-1 py-4 overflow-y-auto">
-        {menuItems.map((item) => (
+        {filteredMenuItems.map((item) => (
           <div key={item.id}>
             <button
               onClick={() => {
@@ -157,7 +175,12 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => 
             <span className="text-xs font-medium text-gray-600">AD</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">Admin@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {userData?.Name || 'Admin'}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {userData?.Email || 'admin@gmail.com'}
+            </p>
           </div>
           <button 
             className="text-gray-400 hover:text-gray-600"

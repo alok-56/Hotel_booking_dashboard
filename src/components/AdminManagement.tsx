@@ -10,6 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Users, Shield, Mail, Phone, Loader2, Eye, EyeOff } from 'lucide-react';
 import { createAdmin, deleteAdmin, getAllAdmins, updateAdmin } from '@/api/Services/Auth/auth';
+import { getAllHotels } from '@/api/Services/Hotel/hotel';
+import { StatsSkeleton, TableSkeleton } from './SkeletonLoaders';
 
 // Types based on your API response
 interface Admin {
@@ -27,6 +29,7 @@ interface Admin {
 const AdminManagement = () => {
   const { toast } = useToast();
   const [admins, setAdmins] = useState<Admin[]>([]);
+  const [hotels, setHotels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,27 +39,46 @@ const AdminManagement = () => {
     Name: '',
     Email: '',
     Password: '',
-    Permission: [] as string[]
+    Permission: [] as string[],
+    Hotel: [] as string[]
   });
 
-  // Available permissions
+  // Available permissions - all sidebar items
   const availablePermissions = [
-    'Dashboard',
-    'booking', 
-    'user',
-    'reports',
-    'settings',
-    'analytics'
+    'growth',
+    'booking',
+    'inventory',
+    'hotels',
+    'rooms',
+    'menu',
+    'guest-directory',
+    'admin-management',
+    'query',
+    'b2b',
+    'expense',
+    'payments',
+    'booking-report',
+    'earning-report'
   ];
 
-  // Load admins on component mount
+  // Load admins and hotels on component mount
   useEffect(() => {
-    loadAdmins();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([loadAdmins(), loadHotels()]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadAdmins = async () => {
     try {
-      setLoading(true);
       const response = await getAllAdmins();
       setAdmins(response.data || []);
     } catch (error: any) {
@@ -65,8 +87,19 @@ const AdminManagement = () => {
         description: error.message || "Failed to load admins",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadHotels = async () => {
+    try {
+      const response = await getAllHotels();
+      setHotels(response.data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load hotels",
+        variant: "destructive"
+      });
     }
   };
 
@@ -75,7 +108,8 @@ const AdminManagement = () => {
       Name: '',
       Email: '',
       Password: '',
-      Permission: []
+      Permission: [],
+      Hotel: []
     });
     setEditingAdmin(null);
     setShowPassword(false);
@@ -92,7 +126,8 @@ const AdminManagement = () => {
       Name: admin.Name,
       Email: admin.Email,
       Password: '', // Don't pre-fill password for security
-      Permission: admin.Permission || []
+      Permission: admin.Permission || [],
+      Hotel: admin.Hotel || []
     });
     setIsDialogOpen(true);
   };
@@ -160,6 +195,15 @@ const AdminManagement = () => {
       return;
     }
 
+    if (formData.Hotel.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one hotel",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
       
@@ -168,7 +212,8 @@ const AdminManagement = () => {
         const updateData: any = {
           Name: formData.Name,
           Email: formData.Email,
-          Permission: formData.Permission
+          Permission: formData.Permission,
+          Hotel: formData.Hotel
         };
         
         // Only include password if it's provided
@@ -179,7 +224,7 @@ const AdminManagement = () => {
         await updateAdmin(editingAdmin._id, updateData);
         
         // Reload admins to get fresh data
-        await loadAdmins();
+        await loadData();
         
         toast({
           title: "Admin Updated",
@@ -200,11 +245,12 @@ const AdminManagement = () => {
           Name: formData.Name,
           Email: formData.Email,
           Password: formData.Password,
-          Permission: formData.Permission
+          Permission: formData.Permission,
+          Hotel: formData.Hotel
         });
         
         // Reload admins to get fresh data
-        await loadAdmins();
+        await loadData();
         
         toast({
           title: "Admin Added",
@@ -234,18 +280,33 @@ const AdminManagement = () => {
     }));
   };
 
+  const handleHotelChange = (hotelId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      Hotel: checked 
+        ? [...prev.Hotel, hotelId]
+        : prev.Hotel.filter(h => h !== hotelId)
+    }));
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
 
   const activeAdmins = admins.filter(admin => !admin.Blocked);
-  const superAdmins = admins.filter(admin => admin.Permission?.includes('Dashboard') && admin.Permission?.includes('settings'));
+  const superAdmins = admins.filter(admin => admin.Permission?.includes('growth') && admin.Permission?.includes('admin-management'));
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading admins...</span>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
+            <p className="text-gray-600 mt-1">Manage system administrators and their permissions</p>
+          </div>
+        </div>
+        <StatsSkeleton />
+        <TableSkeleton />
       </div>
     );
   }
@@ -477,6 +538,30 @@ const AdminManagement = () => {
             </div>
             
             <div className="space-y-3">
+              <Label>Hotels</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-32 overflow-y-auto border rounded p-2">
+                {hotels.map((hotel) => (
+                  <div key={hotel._id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={hotel._id}
+                      checked={formData.Hotel.includes(hotel._id)}
+                      onCheckedChange={(checked) => 
+                        handleHotelChange(hotel._id, checked as boolean)
+                      }
+                      disabled={submitting}
+                    />
+                    <Label htmlFor={hotel._id} className="text-sm cursor-pointer">
+                      {hotel.hotelName}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {formData.Hotel.length === 0 && (
+                <p className="text-sm text-red-500">Please select at least one hotel</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
               <Label>Permissions</Label>
               <div className="grid grid-cols-2 gap-3">
                 {availablePermissions.map((permission) => (
@@ -490,7 +575,7 @@ const AdminManagement = () => {
                       disabled={submitting}
                     />
                     <Label htmlFor={permission} className="text-sm capitalize cursor-pointer">
-                      {permission}
+                      {permission.replace('-', ' ')}
                     </Label>
                   </div>
                 ))}

@@ -65,8 +65,8 @@ const ExpenseManagement = () => {
       }, {});
 
       // Add pagination params
-      queryParams.page = pagination.currentPage;
-      queryParams.limit = pagination.limit;
+      (queryParams as any).page = pagination.currentPage;
+      (queryParams as any).limit = pagination.limit;
 
       // Load expenses
       const expensesResponse = await getAllExpenses(queryParams);
@@ -107,8 +107,8 @@ const ExpenseManagement = () => {
       const expenseData = {
         ...newExpense,
         amount: parseFloat(newExpense.amount),
-        month: parseInt(newExpense.month),
-        year: parseInt(newExpense.year)
+        month: parseInt(newExpense.month.toString()),
+        year: parseInt(newExpense.year.toString())
       };
 
       let response;
@@ -507,7 +507,7 @@ const ExpenseManagement = () => {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center text-gray-500">
+                    <td colSpan={8} className="py-8 text-center text-gray-500">
                       No expenses found. Try adjusting your filters or add a new expense.
                     </td>
                   </tr>
@@ -654,7 +654,7 @@ const ExpenseManagement = () => {
                 <label className="block text-sm font-medium mb-1">Notes</label>
                 <textarea
                   className="w-full px-3 py-2 border rounded-md"
-                  rows="3"
+                  rows={3}
                   value={newExpense.notes}
                   onChange={(e) => setNewExpense(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Enter any additional notes"

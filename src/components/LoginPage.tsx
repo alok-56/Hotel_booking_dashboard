@@ -34,6 +34,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userEmail", email);
         localStorage.setItem("token", result?.token || "");
+        localStorage.setItem("userData", JSON.stringify(result?.data || {}));
         toast({
           title: "Login Successful",
           description: "Welcome to BRILL ROOMS Hotel Management System",
