@@ -13,7 +13,7 @@ export const createOfflineBooking = async (payload: any): Promise<any> => {
   });
 
   const data = await res.json();
-  
+
   return data;
 };
 
@@ -25,15 +25,17 @@ export const getAllBookings = async (): Promise<any> => {
   });
 
   const data = await res.json();
-  
+
   return data;
 };
 
 export const updateBookingStatus = async (
   bookingId: string,
-  status: string
+  status: string,
+  paymentMethod: string,
+  roomno: string
 ): Promise<any> => {
-  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}`;
+  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}&paymentMethod=${paymentMethod}&${roomno}`;
 
   const res = await fetch(url, {
     method: "PATCH",
@@ -43,7 +45,7 @@ export const updateBookingStatus = async (
   });
 
   const data = await res.json();
- 
+
   return data;
 };
 
@@ -99,7 +101,6 @@ export const updateAddon = async (
   return data;
 };
 
-
 export const deleteAddon = async (
   bookingId: string,
   payload: {
@@ -120,7 +121,6 @@ export const deleteAddon = async (
 
   return data;
 };
-
 
 export const getGuestStatusHistory = async (
   startDate: string,

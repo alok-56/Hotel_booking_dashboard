@@ -1607,7 +1607,7 @@ const HotelsManagement = () => {
         </div>
       </div>
       <div>
-        <Label>Nearby Attractions</Label>
+        <Label>Near by Attractions</Label>
         <Input
           value={formData.nearbyAttractions.join(", ")}
           onChange={(e) =>

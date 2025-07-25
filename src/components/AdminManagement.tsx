@@ -1,17 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Users, Shield, Mail, Phone, Loader2, Eye, EyeOff } from 'lucide-react';
-import { createAdmin, deleteAdmin, getAllAdmins, updateAdmin } from '@/api/Services/Auth/auth';
-import { getAllHotels } from '@/api/Services/Hotel/hotel';
-import { StatsSkeleton, TableSkeleton } from './SkeletonLoaders';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  Shield,
+  Mail,
+  Phone,
+  Loader2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import {
+  createAdmin,
+  deleteAdmin,
+  getAllAdmins,
+  updateAdmin,
+} from "@/api/Services/Auth/auth";
+import { getAllHotels } from "@/api/Services/Hotel/hotel";
+import { StatsSkeleton, TableSkeleton } from "./SkeletonLoaders";
 
 // Types based on your API response
 interface Admin {
@@ -36,29 +70,31 @@ const AdminManagement = () => {
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    Name: '',
-    Email: '',
-    Password: '',
+    Name: "",
+    Email: "",
+    Password: "",
     Permission: [] as string[],
-    Hotel: [] as string[]
+    Hotel: [] as string[],
   });
 
   // Available permissions - all sidebar items
   const availablePermissions = [
-    'growth',
-    'booking',
-    'inventory',
-    'hotels',
-    'rooms',
-    'menu',
-    'guest-directory',
-    'admin-management',
-    'query',
-    'b2b',
-    'expense',
-    'payments',
-    'booking-report',
-    'earning-report'
+    "growth",
+    "booking",
+    "inventory",
+    "hotels",
+    "rooms",
+    "menu",
+    "guest-directory",
+    "admin-management",
+    "query",
+    "b2b",
+    "expense",
+    "payments",
+    "booking-report",
+    "earning-report",
+    "settings",
+    "profile"
   ];
 
   // Load admins and hotels on component mount
@@ -71,7 +107,7 @@ const AdminManagement = () => {
     try {
       await Promise.all([loadAdmins(), loadHotels()]);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +121,7 @@ const AdminManagement = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to load admins",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -98,18 +134,18 @@ const AdminManagement = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to load hotels",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const resetForm = () => {
     setFormData({
-      Name: '',
-      Email: '',
-      Password: '',
+      Name: "",
+      Email: "",
+      Password: "",
       Permission: [],
-      Hotel: []
+      Hotel: [],
     });
     setEditingAdmin(null);
     setShowPassword(false);
@@ -122,22 +158,23 @@ const AdminManagement = () => {
 
   const handleEdit = (admin: Admin) => {
     setEditingAdmin(admin);
+    let hotelid = admin.Hotel.map((item: any, index) => item._id);
     setFormData({
       Name: admin.Name,
       Email: admin.Email,
-      Password: '', // Don't pre-fill password for security
+      Password: admin.Password, // Don't pre-fill password for security
       Permission: admin.Permission || [],
-      Hotel: admin.Hotel || []
+      Hotel: hotelid || [],
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this admin?')) return;
-    
+    if (!window.confirm("Are you sure you want to delete this admin?")) return;
+
     try {
       await deleteAdmin(id);
-      setAdmins(prev => prev.filter(admin => admin._id !== id));
+      setAdmins((prev) => prev.filter((admin) => admin._id !== id));
       toast({
         title: "Admin Deleted",
         description: "Admin has been removed successfully.",
@@ -146,51 +183,55 @@ const AdminManagement = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete admin",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleToggleStatus = async (id: string, currentBlocked: boolean) => {
     try {
-      const admin = admins.find(a => a._id === id);
+      const admin = admins.find((a) => a._id === id);
       if (!admin) return;
 
       const updateData = {
         Name: admin.Name,
         Email: admin.Email,
-        Password: admin.Password, // Keep current passwor
+        Password: admin.Password, 
         Permission: admin.Permission,
-        Blocked: !currentBlocked
+        Blocked: !currentBlocked,
       };
 
-      await updateAdmin(id, updateData);
-      setAdmins(prev => prev.map(admin => 
-        admin._id === id 
-          ? { ...admin, Blocked: !currentBlocked }
-          : admin
-      ));
-      toast({
-        title: "Status Updated",
-        description: `Admin ${!currentBlocked ? 'blocked' : 'activated'} successfully.`,
-      });
+      let res = await updateAdmin(id, updateData);
+      if (res.status) {
+        toast({
+          title: "Status Updated",
+          description: `Admin ${
+            !currentBlocked ? "blocked" : "activated"
+          } successfully.`,
+        });
+        setAdmins((prev) =>
+          prev.map((admin) =>
+            admin._id === id ? { ...admin, Blocked: !currentBlocked } : admin
+          )
+        );
+      }
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to update status",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.Permission.length === 0) {
       toast({
         title: "Error",
         description: "Please select at least one permission",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -199,33 +240,33 @@ const AdminManagement = () => {
       toast({
         title: "Error",
         description: "Please select at least one hotel",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     try {
       setSubmitting(true);
-      
+
       if (editingAdmin) {
         // Update existing admin
         const updateData: any = {
           Name: formData.Name,
           Email: formData.Email,
           Permission: formData.Permission,
-          Hotel: formData.Hotel
+          Hotel: formData.Hotel,
         };
-        
+
         // Only include password if it's provided
         if (formData.Password.trim()) {
           updateData.Password = formData.Password;
         }
-        
+
         await updateAdmin(editingAdmin._id, updateData);
-        
+
         // Reload admins to get fresh data
         await loadData();
-        
+
         toast({
           title: "Admin Updated",
           description: "Admin details have been updated successfully.",
@@ -236,35 +277,37 @@ const AdminManagement = () => {
           toast({
             title: "Error",
             description: "Password is required for new admin",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
-        
+
         await createAdmin({
           Name: formData.Name,
           Email: formData.Email,
           Password: formData.Password,
           Permission: formData.Permission,
-          Hotel: formData.Hotel
+          Hotel: formData.Hotel,
         });
-        
+
         // Reload admins to get fresh data
         await loadData();
-        
+
         toast({
           title: "Admin Added",
           description: "New admin has been added successfully.",
         });
       }
-      
+
       setIsDialogOpen(false);
       resetForm();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || `Failed to ${editingAdmin ? 'update' : 'create'} admin`,
-        variant: "destructive"
+        description:
+          error.message ||
+          `Failed to ${editingAdmin ? "update" : "create"} admin`,
+        variant: "destructive",
       });
     } finally {
       setSubmitting(false);
@@ -272,20 +315,20 @@ const AdminManagement = () => {
   };
 
   const handlePermissionChange = (permission: string, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      Permission: checked 
+      Permission: checked
         ? [...prev.Permission, permission]
-        : prev.Permission.filter(p => p !== permission)
+        : prev.Permission.filter((p) => p !== permission),
     }));
   };
 
   const handleHotelChange = (hotelId: string, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      Hotel: checked 
+      Hotel: checked
         ? [...prev.Hotel, hotelId]
-        : prev.Hotel.filter(h => h !== hotelId)
+        : prev.Hotel.filter((h) => h !== hotelId),
     }));
   };
 
@@ -293,16 +336,24 @@ const AdminManagement = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const activeAdmins = admins.filter(admin => !admin.Blocked);
-  const superAdmins = admins.filter(admin => admin.Permission?.includes('growth') && admin.Permission?.includes('admin-management'));
+  const activeAdmins = admins.filter((admin) => !admin.Blocked);
+  const superAdmins = admins.filter(
+    (admin) =>
+      admin.Permission?.includes("growth") &&
+      admin.Permission?.includes("admin-management")
+  );
 
   if (loading) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
-            <p className="text-gray-600 mt-1">Manage system administrators and their permissions</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Admin Management
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Manage system administrators and their permissions
+            </p>
           </div>
         </div>
         <StatsSkeleton />
@@ -317,7 +368,9 @@ const AdminManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
-          <p className="text-gray-600 mt-1">Manage system administrators and their permissions</p>
+          <p className="text-gray-600 mt-1">
+            Manage system administrators and their permissions
+          </p>
         </div>
         <Button onClick={handleAdd} className="bg-red-600 hover:bg-red-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -332,8 +385,12 @@ const AdminManagement = () => {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{admins.length}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Admins
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {admins.length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -343,8 +400,12 @@ const AdminManagement = () => {
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{activeAdmins.length}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Active Admins
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {activeAdmins.length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -354,8 +415,12 @@ const AdminManagement = () => {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Super Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{superAdmins.length}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Super Admins
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {superAdmins.length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -374,9 +439,16 @@ const AdminManagement = () => {
           {admins.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No administrators found</h3>
-              <p className="text-gray-600 mb-4">Get started by creating your first admin account.</p>
-              <Button onClick={handleAdd} className="bg-red-600 hover:bg-red-700">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No administrators found
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Get started by creating your first admin account.
+              </p>
+              <Button
+                onClick={handleAdd}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Admin
               </Button>
@@ -403,26 +475,34 @@ const AdminManagement = () => {
                         <div className="flex flex-wrap gap-1">
                           {admin.Permission?.length > 0 ? (
                             admin.Permission.map((permission) => (
-                              <Badge key={permission} variant="outline" className="text-xs">
+                              <Badge
+                                key={permission}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {permission}
                               </Badge>
                             ))
                           ) : (
-                            <Badge variant="outline" className="text-xs text-gray-400">
+                            <Badge
+                              variant="outline"
+                              className="text-xs text-gray-400"
+                            >
                               No permissions
                             </Badge>
                           )}
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge 
+                        <Badge
                           variant="outline"
-                          className={admin.Blocked 
-                            ? 'bg-red-100 text-red-800 border-red-200' 
-                            : 'bg-green-100 text-green-800 border-green-200'
+                          className={
+                            admin.Blocked
+                              ? "bg-red-100 text-red-800 border-red-200"
+                              : "bg-green-100 text-green-800 border-green-200"
                           }
                         >
-                          {admin.Blocked ? 'Inactive' : 'Active'}
+                          {admin.Blocked ? "Inactive" : "Active"}
                         </Badge>
                       </td>
                       <td className="p-4">{formatDate(admin.createdAt)}</td>
@@ -439,8 +519,14 @@ const AdminManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleToggleStatus(admin._id, admin.Blocked)}
-                            className={admin.Blocked ? "text-green-600 hover:text-green-700" : "text-orange-600 hover:text-orange-700"}
+                            onClick={() =>
+                              handleToggleStatus(admin._id, admin.Blocked)
+                            }
+                            className={
+                              admin.Blocked
+                                ? "text-green-600 hover:text-green-700"
+                                : "text-orange-600 hover:text-orange-700"
+                            }
                             disabled={submitting}
                           >
                             {admin.Blocked ? "Activate" : "Block"}
@@ -470,13 +556,12 @@ const AdminManagement = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingAdmin ? 'Edit Admin' : 'Add New Admin'}
+              {editingAdmin ? "Edit Admin" : "Add New Admin"}
             </DialogTitle>
             <DialogDescription>
-              {editingAdmin 
-                ? 'Update admin details and permissions.' 
-                : 'Create a new administrator account.'
-              }
+              {editingAdmin
+                ? "Update admin details and permissions."
+                : "Create a new administrator account."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -485,26 +570,30 @@ const AdminManagement = () => {
               <Input
                 id="name"
                 value={formData.Name}
-                onChange={(e) => setFormData(prev => ({ ...prev, Name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, Name: e.target.value }))
+                }
                 placeholder="Enter admin's full name"
                 required
                 disabled={submitting}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.Email}
-                onChange={(e) => setFormData(prev => ({ ...prev, Email: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, Email: e.target.value }))
+                }
                 placeholder="Enter email address"
                 required
                 disabled={submitting}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">
                 Password {editingAdmin && "(leave blank to keep current)"}
@@ -514,8 +603,17 @@ const AdminManagement = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={formData.Password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, Password: e.target.value }))}
-                  placeholder={editingAdmin ? "Enter new password (optional)" : "Enter password"}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      Password: e.target.value,
+                    }))
+                  }
+                  placeholder={
+                    editingAdmin
+                      ? "Enter new password (optional)"
+                      : "Enter password"
+                  }
                   required={!editingAdmin}
                   disabled={submitting}
                   className="pr-10"
@@ -536,7 +634,7 @@ const AdminManagement = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <Label>Hotels</Label>
               <div className="grid grid-cols-2 gap-3 max-h-32 overflow-y-auto border rounded p-2">
@@ -545,19 +643,24 @@ const AdminManagement = () => {
                     <Checkbox
                       id={hotel._id}
                       checked={formData.Hotel.includes(hotel._id)}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         handleHotelChange(hotel._id, checked as boolean)
                       }
                       disabled={submitting}
                     />
-                    <Label htmlFor={hotel._id} className="text-sm cursor-pointer">
+                    <Label
+                      htmlFor={hotel._id}
+                      className="text-sm cursor-pointer"
+                    >
                       {hotel.hotelName}
                     </Label>
                   </div>
                 ))}
               </div>
               {formData.Hotel.length === 0 && (
-                <p className="text-sm text-red-500">Please select at least one hotel</p>
+                <p className="text-sm text-red-500">
+                  Please select at least one hotel
+                </p>
               )}
             </div>
 
@@ -569,22 +672,27 @@ const AdminManagement = () => {
                     <Checkbox
                       id={permission}
                       checked={formData.Permission.includes(permission)}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         handlePermissionChange(permission, checked as boolean)
                       }
                       disabled={submitting}
                     />
-                    <Label htmlFor={permission} className="text-sm capitalize cursor-pointer">
-                      {permission.replace('-', ' ')}
+                    <Label
+                      htmlFor={permission}
+                      className="text-sm capitalize cursor-pointer"
+                    >
+                      {permission.replace("-", " ")}
                     </Label>
                   </div>
                 ))}
               </div>
               {formData.Permission.length === 0 && (
-                <p className="text-sm text-red-600">Please select at least one permission</p>
+                <p className="text-sm text-red-600">
+                  Please select at least one permission
+                </p>
               )}
             </div>
-            
+
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
@@ -597,13 +705,15 @@ const AdminManagement = () => {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 className="bg-red-600 hover:bg-red-700"
                 disabled={submitting || formData.Permission.length === 0}
               >
-                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingAdmin ? 'Update' : 'Create'} Admin
+                {submitting && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                {editingAdmin ? "Update" : "Create"} Admin
               </Button>
             </div>
           </form>

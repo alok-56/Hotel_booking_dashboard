@@ -258,6 +258,14 @@ const BookingDetailModal = ({
               {booking.status === "upcoming" ? (
                 <>
                   <Button
+                    onClick={() => handleStatusUpdate?.(booking.id, "cancelled")}
+                    variant="outline"
+                    className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
+                    disabled={isLoading}
+                  >
+                    Cancel Booking
+                  </Button>
+                  <Button
                     onClick={() => handleStatusUpdate?.(booking.id, "checkin")}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"

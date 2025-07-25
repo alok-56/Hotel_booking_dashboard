@@ -19,7 +19,7 @@ export const createHotel = async (hotel: any) => {
 
 // Get all hotels
 export const getAllHotels = async () => {
-  const res = await fetch(`${BASEURL}/hotel/all`, {
+  const res = await fetch(`${BASEURL}/admin/profile`, {
     headers: {
       token: TOKEN()!,
     },
@@ -127,7 +127,7 @@ export const createMenu = async (payload: {
   hotelId: string;
   menuname: string;
   price: number;
-   isavailable?: boolean; 
+  isavailable?: boolean;
   Category?: string;
 }): Promise<any> => {
   const res = await fetch(`${BASEURL}/menu/create`, {
