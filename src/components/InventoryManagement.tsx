@@ -10,7 +10,9 @@ import {
   BarChart3,
   Loader2,
   AlertCircle,
+  Download,
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 import {
   Card,
   CardContent,
@@ -219,6 +221,35 @@ const RoomOccupancyDashboard = () => {
   const dateRange = generateDateRange(startDate, endDate);
   const totalStats = getTotalStats();
 
+  const exportToExcel = () => {
+    const dateRange = generateDateRange(startDate, endDate);
+    const exportData = [];
+
+    dateRange.forEach((date) => {
+      selectedHotels.forEach((hotelId) => {
+        const hotel = hotels.find((h) => h.id === hotelId);
+        const roomInfo = getRoomDataForDate(date);
+        
+        exportData.push({
+          Date: date,
+          Hotel: hotel?.name || 'Unknown',
+          Location: hotel?.location || 'Unknown',
+          'Total Rooms': roomInfo.totalRooms,
+          'Sold Rooms': roomInfo.soldRooms,
+          'Available Rooms': roomInfo.availableRooms,
+          'Occupancy Rate %': roomInfo.avgOccupancyRate,
+        });
+      });
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory Report');
+    
+    const fileName = `inventory_report_${startDate}_to_${endDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -393,24 +424,36 @@ const RoomOccupancyDashboard = () => {
 
             {/* Action Buttons */}
             <div className="mt-4 flex justify-between">
-              <Button 
-                variant="outline"
-                onClick={fetchHotels}
-                disabled={hotelsLoading}
-                className="flex items-center gap-2"
-              >
-                {hotelsLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading Hotels...
-                  </>
-                ) : (
-                  <>
-                    <Building className="h-4 w-4" />
-                    Refresh Hotels
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={fetchHotels}
+                  disabled={hotelsLoading}
+                  className="flex items-center gap-2"
+                >
+                  {hotelsLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading Hotels...
+                    </>
+                  ) : (
+                    <>
+                      <Building className="h-4 w-4" />
+                      Refresh Hotels
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={exportToExcel}
+                  disabled={loading || selectedHotels.length === 0}
+                  className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Export to Excel
+                </Button>
+              </div>
               
               <Button 
                 onClick={fetchRoomOccupancyData}

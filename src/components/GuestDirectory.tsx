@@ -9,8 +9,11 @@ import {
   MapPin,
   Plus,
   X,
+  Building,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getGuestStatusHistory } from "@/api/Services/Booking/booking";
+import { getAllHotels } from "@/api/Services/Hotel/hotel";
 
 const GuestDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +22,8 @@ const GuestDirectory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [hotels, setHotels] = useState([]);
+  const [selectedHotel, setSelectedHotel] = useState("");
   
   // Date filter states
   const [startDate, setStartDate] = useState(
@@ -49,9 +54,22 @@ const GuestDirectory = () => {
     }
   };
 
+  // Fetch hotels data
+  const fetchHotels = async () => {
+    try {
+      const response = await getAllHotels();
+      if (response.status && response.data) {
+        setHotels(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching hotels:", err);
+    }
+  };
+
   // Fetch guests data on component mount and when date filters change
   useEffect(() => {
     fetchGuests();
+    fetchHotels();
   }, [startDate, endDate]);
 
   const getStatusColor = (status) => {
@@ -74,10 +92,15 @@ const GuestDirectory = () => {
   const filteredGuests =
     guests &&
     guests.filter(
-      (guest) =>
-        guest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest?.phone?.includes(searchTerm)
+      (guest) => {
+        const matchesSearch = guest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          guest?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          guest?.phone?.includes(searchTerm);
+        
+        const matchesHotel = selectedHotel === "" || guest?.hotelId === selectedHotel;
+        
+        return matchesSearch && matchesHotel;
+      }
     );
 
   // Calculate stats from actual data
@@ -253,6 +276,23 @@ const GuestDirectory = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
+            
+            <div className="min-w-[200px]">
+              <Select value={selectedHotel} onValueChange={setSelectedHotel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Hotel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Hotels</SelectItem>
+                  {hotels.map((hotel) => (
+                    <SelectItem key={hotel._id} value={hotel._id}>
+                      {hotel.hotelName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-50"

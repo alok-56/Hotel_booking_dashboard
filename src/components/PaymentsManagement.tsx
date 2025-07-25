@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { CreditCard, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Building } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAllBookingPayments } from '@/api/Services/Booking/booking';
+import { getAllHotels } from '@/api/Services/Hotel/hotel';
 
 // Skeleton Loader Component
 const SkeletonLoader = () => {
@@ -82,18 +84,24 @@ const PaymentsManagement = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hotels, setHotels] = useState([]);
+  const [selectedHotel, setSelectedHotel] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
 
   useEffect(() => {
-    const fetchPayments = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getAllBookingPayments();
+        const [paymentsResponse, hotelsResponse] = await Promise.all([
+          getAllBookingPayments(),
+          getAllHotels()
+        ]);
         
-        if (response.status && response.data) {
-          const transformedPayments = response.data.map((payment) => ({
+        if (paymentsResponse.status && paymentsResponse.data) {
+          const transformedPayments = paymentsResponse.data.map((payment) => ({
             id: payment.merchantTransactionId,
-            
+            hotelId: payment.hotelId?._id || '',
             amount: payment.totalAmount,
             date: new Date(payment.transactionTime).toISOString().split('T')[0],
             hotel: payment.hotelId?.hotelName || 'N/A',
@@ -107,29 +115,44 @@ const PaymentsManagement = () => {
           
           setPayments(transformedPayments);
         }
+
+        if (hotelsResponse.status && hotelsResponse.data) {
+          setHotels(hotelsResponse.data);
+        }
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching payments:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPayments();
+    fetchData();
   }, []);
 
+  const filteredPayments = payments.filter((payment) => {
+    const matchesSearch = searchTerm === "" || 
+      payment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.hotel.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesHotel = selectedHotel === "" || payment.hotelId === selectedHotel;
+    
+    return matchesSearch && matchesHotel;
+  });
+
   const calculateStats = () => {
-    // Calculate from raw API data for more accurate stats
-    const totalAmount = payments.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
-    const totalPaid = payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
-    const totalPending = payments.reduce((sum, p) => sum + (p.pendingAmount || 0), 0);
+    // Calculate from filtered data
+    const totalAmount = filteredPayments.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+    const totalPaid = filteredPayments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+    const totalPending = filteredPayments.reduce((sum, p) => sum + (p.pendingAmount || 0), 0);
     
     // Legacy calculations for incoming/outgoing (if needed)
-    const totalIncoming = payments
+    const totalIncoming = filteredPayments
       .filter(p => p.type === 'Incoming' && p.status === 'Completed')
       .reduce((sum, p) => sum + p.amount, 0);
     
-    const totalOutgoing = payments
+    const totalOutgoing = filteredPayments
       .filter(p => p.type === 'Outgoing' && p.status === 'Completed')
       .reduce((sum, p) => sum + p.amount, 0);
     
@@ -201,11 +224,31 @@ const PaymentsManagement = () => {
         <div className="flex space-x-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search payments..." className="pl-10 w-64" />
+            <Input 
+              placeholder="Search payments..." 
+              className="pl-10 w-64"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
+          
+          <Select value={selectedHotel} onValueChange={setSelectedHotel}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by Hotel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Hotels</SelectItem>
+              {hotels.map((hotel) => (
+                <SelectItem key={hotel._id} value={hotel._id}>
+                  {hotel.hotelName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
-            Filter
+            More Filters
           </Button>
         </div>
 
@@ -262,14 +305,14 @@ const PaymentsManagement = () => {
         <CardHeader>
           <CardTitle>Recent Payments</CardTitle>
           <CardDescription>
-            {payments.length > 0 
-              ? `Showing ${payments.length} payment${payments.length !== 1 ? 's' : ''}`
+            {filteredPayments.length > 0 
+              ? `Showing ${filteredPayments.length} payment${filteredPayments.length !== 1 ? 's' : ''}`
               : 'No payments found'
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {payments.length === 0 ? (
+          {filteredPayments.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-gray-500 mb-4">No payments found</div>
               <Button>
@@ -295,7 +338,7 @@ const PaymentsManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.map((payment) => (
+                  {filteredPayments.map((payment) => (
                     <tr key={payment.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4 font-medium">{payment.id}</td>
                      

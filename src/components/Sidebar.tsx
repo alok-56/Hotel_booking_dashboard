@@ -74,6 +74,7 @@ const Sidebar = ({
     },
     { id: "expense", label: "Expense", icon: Receipt },
     { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "cash-balance", label: "Cash Balance", icon: DollarSign },
     {
       id: "reports",
       label: "Reports",
@@ -81,7 +82,6 @@ const Sidebar = ({
       hasSubmenu: true,
       submenu: [
         { id: "booking-report", label: "Booking", icon: Calendar },
-        { id: "earning-report", label: "Earning", icon: DollarSign },
       ],
     },
     { id: "settings", label: "Settings", icon: Settings },

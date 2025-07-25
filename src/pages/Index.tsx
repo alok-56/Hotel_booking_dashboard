@@ -14,7 +14,7 @@ import B2BManagement from '../components/B2BManagement';
 import ExpenseManagement from '../components/ExpenseManagement';
 import PaymentsManagement from '../components/PaymentsManagement';
 import BookingReport from '../components/BookingReport';
-import EarningReport from '../components/EarningReport';
+import CashBalance from '../components/CashBalance';
 import SettingsScreen from '../components/SettingsScreen';
 import ProfileSection from '../components/ProfileSection';
 
@@ -70,8 +70,8 @@ const Index = () => {
         return <PaymentsManagement />;
       case 'booking-report':
         return <BookingReport />;
-      case 'earning-report':
-        return <EarningReport />;
+      case 'cash-balance':
+        return <CashBalance />;
       case 'settings':
         return <SettingsScreen />;
       case 'profile':

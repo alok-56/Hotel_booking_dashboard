@@ -10,8 +10,13 @@ import {
   Clock,
   CheckCircle,
   Home,
+  Search,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import BookingDetailModal from "./BookingDetailModal";
 import EnhancedAddBookingModal from "./EnhancedAddBookingModal";
@@ -52,6 +57,14 @@ const BookingManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // New state for search and collect payment
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCollectPayment, setShowCollectPayment] = useState(false);
+  const [collectingBooking, setCollectingBooking] = useState<Booking | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [confirmationDialog, setConfirmationDialog] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -121,7 +134,7 @@ const BookingManagement = () => {
 
   const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
     try {
-      await updateBookingStatus(bookingId, newStatus);
+      await updateBookingStatus(bookingId, newStatus, "", "");
       toast({
         title: "Status Updated",
         description: `Booking status updated to ${newStatus}`,
@@ -167,9 +180,19 @@ const BookingManagement = () => {
     }
   };
 
-  const filteredBookings = bookings.filter(
-    (booking) => booking.status === activeTab
-  );
+  // Static room numbers for now
+  const roomNumbers = ["101", "102", "103", "201", "202", "203", "301", "302", "303"];
+  const paymentMethods = ["Cash", "Card", "UPI", "Net Banking"];
+
+  const filteredBookings = bookings
+    .filter((booking) => booking.status === activeTab)
+    .filter((booking) => 
+      searchTerm === "" || 
+      booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.phoneNumber.includes(searchTerm) ||
+      booking.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   const upcomingCount = bookings.filter((b) => b.status === "upcoming").length;
   const inHouseCount = bookings.filter((b) => b.status === "in-house").length;
   const completedCount = bookings.filter(
@@ -184,6 +207,49 @@ const BookingManagement = () => {
   const handleBookingSuccess = () => {
     loadBookings();
     setShowAddBooking(false);
+  };
+
+  const handleCollectPayment = (booking: Booking) => {
+    setCollectingBooking(booking);
+    setShowCollectPayment(true);
+    setPaymentMethod("");
+    setSelectedRooms([]);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!collectingBooking || !paymentMethod || selectedRooms.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please select payment method and room numbers",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateBookingStatus(
+        collectingBooking.id,
+        "collectPayment",
+        paymentMethod,
+        selectedRooms.join(",")
+      );
+      
+      toast({
+        title: "Payment Collected",
+        description: `Payment collected successfully for ${collectingBooking.guestName}`,
+      });
+      
+      loadBookings();
+      setShowCollectPayment(false);
+      setCollectingBooking(null);
+      setConfirmationDialog(false);
+    } catch (error) {
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Failed to collect payment",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -214,6 +280,20 @@ const BookingManagement = () => {
               <Button variant="outline" size="icon">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
+            </div>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search by guest name, booking ID, phone, or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full max-w-md"
+              />
             </div>
           </div>
         </div>
@@ -260,6 +340,9 @@ const BookingManagement = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -328,6 +411,22 @@ const BookingManagement = () => {
                       </span>
                     </div>
                   </td>
+                  <td className="px-6 py-4">
+                    {booking.pendingamount > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCollectPayment(booking);
+                        }}
+                        className="text-green-600 border-green-600 hover:bg-green-50"
+                      >
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Collect ₹{booking.pendingamount}
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -360,6 +459,128 @@ const BookingManagement = () => {
           onClose={() => setShowAddBooking(false)}
           onSuccess={handleBookingSuccess}
         />
+      )}
+
+      {/* Collect Payment Modal */}
+      {showCollectPayment && collectingBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              Collect Payment for {collectingBooking.guestName}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pending Amount: ₹{collectingBooking.pendingamount}
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method *
+                </label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign Rooms *
+                </label>
+                <Select 
+                  value={selectedRooms.join(",")} 
+                  onValueChange={(value) => {
+                    if (value && !selectedRooms.includes(value)) {
+                      setSelectedRooms([...selectedRooms, value]);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room numbers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomNumbers
+                      .filter(room => !selectedRooms.includes(room))
+                      .map((room) => (
+                      <SelectItem key={room} value={room}>
+                        Room {room}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {selectedRooms.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {selectedRooms.map((room, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
+                      >
+                        Room {room}
+                        <button
+                          onClick={() => setSelectedRooms(selectedRooms.filter(r => r !== room))}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCollectPayment(false);
+                  setCollectingBooking(null);
+                }}
+              >
+                Cancel
+              </Button>
+              
+              <AlertDialog open={confirmationDialog} onOpenChange={setConfirmationDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    onClick={() => setConfirmationDialog(true)}
+                    disabled={!paymentMethod || selectedRooms.length === 0}
+                  >
+                    Collect Payment
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Payment Collection</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to collect ₹{collectingBooking.pendingamount} from {collectingBooking.guestName} via {paymentMethod}?
+                      <br />
+                      Assigned rooms: {selectedRooms.join(", ")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmPayment}>
+                      Confirm Collection
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
