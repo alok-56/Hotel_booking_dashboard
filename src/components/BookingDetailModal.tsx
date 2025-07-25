@@ -269,7 +269,7 @@ const BookingDetailModal = ({
                     onClick={() => handleStatusUpdate?.(booking.id, "checkin")}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
-                    disabled={isLoading}
+                    disabled={isLoading || booking.pendingamount>0}
                   >
                     Check-in
                   </Button>

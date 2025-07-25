@@ -15,8 +15,24 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import BookingDetailModal from "./BookingDetailModal";
 import EnhancedAddBookingModal from "./EnhancedAddBookingModal";
@@ -44,6 +60,7 @@ interface Booking {
   source: "direct" | "ota";
   phoneNumber: string;
   email: string;
+  roomno:any
 }
 
 const BookingManagement = () => {
@@ -57,11 +74,13 @@ const BookingManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // New state for search and collect payment
   const [searchTerm, setSearchTerm] = useState("");
   const [showCollectPayment, setShowCollectPayment] = useState(false);
-  const [collectingBooking, setCollectingBooking] = useState<Booking | null>(null);
+  const [collectingBooking, setCollectingBooking] = useState<Booking | null>(
+    null
+  );
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [confirmationDialog, setConfirmationDialog] = useState(false);
@@ -94,6 +113,7 @@ const BookingManagement = () => {
             amount: booking.totalAmount || 0,
             amountCollected: booking.amountPaid || 0,
             pendingamount: booking.pendingAmount || 0,
+            roomno:booking.RoomNo,
             status:
               booking.status === "booked"
                 ? "upcoming"
@@ -141,7 +161,6 @@ const BookingManagement = () => {
       });
       loadBookings();
       setShowBookingDetail(false);
-           
     } catch (error) {
       toast({
         title: "Update Failed",
@@ -181,17 +200,28 @@ const BookingManagement = () => {
   };
 
   // Static room numbers for now
-  const roomNumbers = ["101", "102", "103", "201", "202", "203", "301", "302", "303"];
+  const roomNumbers = [
+    "101",
+    "102",
+    "103",
+    "201",
+    "202",
+    "203",
+    "301",
+    "302",
+    "303",
+  ];
   const paymentMethods = ["Cash", "Card", "UPI", "Net Banking"];
 
   const filteredBookings = bookings
     .filter((booking) => booking.status === activeTab)
-    .filter((booking) => 
-      searchTerm === "" || 
-      booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.phoneNumber.includes(searchTerm) ||
-      booking.email.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter(
+      (booking) =>
+        searchTerm === "" ||
+        booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.phoneNumber.includes(searchTerm) ||
+        booking.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
   const upcomingCount = bookings.filter((b) => b.status === "upcoming").length;
   const inHouseCount = bookings.filter((b) => b.status === "in-house").length;
@@ -233,12 +263,12 @@ const BookingManagement = () => {
         paymentMethod,
         selectedRooms.join(",")
       );
-      
+
       toast({
         title: "Payment Collected",
         description: `Payment collected successfully for ${collectingBooking.guestName}`,
       });
-      
+
       loadBookings();
       setShowCollectPayment(false);
       setCollectingBooking(null);
@@ -246,7 +276,8 @@ const BookingManagement = () => {
     } catch (error) {
       toast({
         title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Failed to collect payment",
+        description:
+          error instanceof Error ? error.message : "Failed to collect payment",
         variant: "destructive",
       });
     }
@@ -282,7 +313,7 @@ const BookingManagement = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Search Bar */}
           <div className="mt-4">
             <div className="relative">
@@ -341,6 +372,7 @@ const BookingManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
+               
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -380,7 +412,7 @@ const BookingManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {booking.rooms} Room
+                    {booking.rooms} Room , {booking.roomno.join(',')}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
@@ -397,9 +429,7 @@ const BookingManagement = () => {
                         {booking.amount - booking.amountCollected}
                       </div>
                     )}
-                    {booking.paymentStatus === "pending" && (
-                      <div className="text-sm text-blue-600">Pay at hotel</div>
-                    )}
+                    
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -468,7 +498,7 @@ const BookingManagement = () => {
             <h3 className="text-lg font-semibold mb-4">
               Collect Payment for {collectingBooking.guestName}
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -498,8 +528,8 @@ const BookingManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Assign Rooms *
                 </label>
-                <Select 
-                  value={selectedRooms.join(",")} 
+                <Select
+                  value={selectedRooms.join(",")}
                   onValueChange={(value) => {
                     if (value && !selectedRooms.includes(value)) {
                       setSelectedRooms([...selectedRooms, value]);
@@ -511,15 +541,15 @@ const BookingManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {roomNumbers
-                      .filter(room => !selectedRooms.includes(room))
+                      .filter((room) => !selectedRooms.includes(room))
                       .map((room) => (
-                      <SelectItem key={room} value={room}>
-                        Room {room}
-                      </SelectItem>
-                    ))}
+                        <SelectItem key={room} value={room}>
+                          Room {room}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
-                
+
                 {selectedRooms.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {selectedRooms.map((room, index) => (
@@ -529,7 +559,11 @@ const BookingManagement = () => {
                       >
                         Room {room}
                         <button
-                          onClick={() => setSelectedRooms(selectedRooms.filter(r => r !== room))}
+                          onClick={() =>
+                            setSelectedRooms(
+                              selectedRooms.filter((r) => r !== room)
+                            )
+                          }
                           className="ml-1 text-blue-600 hover:text-blue-800"
                         >
                           ×
@@ -551,8 +585,11 @@ const BookingManagement = () => {
               >
                 Cancel
               </Button>
-              
-              <AlertDialog open={confirmationDialog} onOpenChange={setConfirmationDialog}>
+
+              <AlertDialog
+                open={confirmationDialog}
+                onOpenChange={setConfirmationDialog}
+              >
                 <AlertDialogTrigger asChild>
                   <Button
                     onClick={() => setConfirmationDialog(true)}
@@ -563,9 +600,13 @@ const BookingManagement = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Confirm Payment Collection</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Confirm Payment Collection
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to collect ₹{collectingBooking.pendingamount} from {collectingBooking.guestName} via {paymentMethod}?
+                      Are you sure you want to collect ₹
+                      {collectingBooking.pendingamount} from{" "}
+                      {collectingBooking.guestName} via {paymentMethod}?
                       <br />
                       Assigned rooms: {selectedRooms.join(", ")}
                     </AlertDialogDescription>

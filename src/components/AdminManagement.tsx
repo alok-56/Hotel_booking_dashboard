@@ -94,7 +94,8 @@ const AdminManagement = () => {
     "booking-report",
     "earning-report",
     "settings",
-    "profile"
+    "profile",
+    "cash-balance"
   ];
 
   // Load admins and hotels on component mount
