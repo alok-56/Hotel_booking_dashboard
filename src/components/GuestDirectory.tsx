@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getGuestStatusHistory } from "@/api/Services/Booking/booking";
 import { getAllHotels } from "@/api/Services/Hotel/hotel";
 
+
 const GuestDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGuest, setSelectedGuest] = useState(null);
@@ -23,7 +24,7 @@ const GuestDirectory = () => {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [hotels, setHotels] = useState([]);
-  const [selectedHotel, setSelectedHotel] = useState("");
+  const [selectedHotel, setSelectedHotel] = useState("all"); // Changed from "" to "all"
   
   // Date filter states
   const [startDate, setStartDate] = useState(
@@ -97,7 +98,8 @@ const GuestDirectory = () => {
           guest?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           guest?.phone?.includes(searchTerm);
         
-        const matchesHotel = selectedHotel === "" || guest?.hotelId === selectedHotel;
+        // Updated filter logic to handle "all" value
+        const matchesHotel = selectedHotel === "all" || guest?.hotelId === selectedHotel;
         
         return matchesSearch && matchesHotel;
       }
@@ -283,7 +285,7 @@ const GuestDirectory = () => {
                   <SelectValue placeholder="Filter by Hotel" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Hotels</SelectItem>
+                  <SelectItem value="all">All Hotels</SelectItem>
                   {hotels.map((hotel) => (
                     <SelectItem key={hotel._id} value={hotel._id}>
                       {hotel.hotelName}

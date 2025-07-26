@@ -60,7 +60,7 @@ interface Booking {
   source: "direct" | "ota";
   phoneNumber: string;
   email: string;
-  roomno:any
+  roomno: any;
 }
 
 const BookingManagement = () => {
@@ -113,7 +113,7 @@ const BookingManagement = () => {
             amount: booking.totalAmount || 0,
             amountCollected: booking.amountPaid || 0,
             pendingamount: booking.pendingAmount || 0,
-            roomno:booking.RoomNo,
+            roomno: booking.RoomNo,
             status:
               booking.status === "booked"
                 ? "upcoming"
@@ -247,7 +247,7 @@ const BookingManagement = () => {
   };
 
   const handleConfirmPayment = async () => {
-    if (!collectingBooking || !paymentMethod || selectedRooms.length === 0) {
+    if (!collectingBooking || !paymentMethod) {
       toast({
         title: "Missing Information",
         description: "Please select payment method and room numbers",
@@ -372,7 +372,7 @@ const BookingManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-               
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -412,7 +412,7 @@ const BookingManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {booking.rooms} Room , {booking.roomno.join(',')}
+                    {booking.rooms} Room , {booking.roomno.join(",")}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
@@ -429,7 +429,6 @@ const BookingManagement = () => {
                         {booking.amount - booking.amountCollected}
                       </div>
                     )}
-                    
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -524,55 +523,57 @@ const BookingManagement = () => {
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assign Rooms *
-                </label>
-                <Select
-                  value={selectedRooms.join(",")}
-                  onValueChange={(value) => {
-                    if (value && !selectedRooms.includes(value)) {
-                      setSelectedRooms([...selectedRooms, value]);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room numbers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roomNumbers
-                      .filter((room) => !selectedRooms.includes(room))
-                      .map((room) => (
-                        <SelectItem key={room} value={room}>
-                          Room {room}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+              {collectingBooking.status === "in-house" ? null : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assign Rooms *
+                  </label>
+                  <Select
+                    value={selectedRooms.join(",")}
+                    onValueChange={(value) => {
+                      if (value && !selectedRooms.includes(value)) {
+                        setSelectedRooms([...selectedRooms, value]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select room numbers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomNumbers
+                        .filter((room) => !selectedRooms.includes(room))
+                        .map((room) => (
+                          <SelectItem key={room} value={room}>
+                            Room {room}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
 
-                {selectedRooms.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedRooms.map((room, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
-                      >
-                        Room {room}
-                        <button
-                          onClick={() =>
-                            setSelectedRooms(
-                              selectedRooms.filter((r) => r !== room)
-                            )
-                          }
-                          className="ml-1 text-blue-600 hover:text-blue-800"
+                  {selectedRooms.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {selectedRooms.map((room, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                          Room {room}
+                          <button
+                            onClick={() =>
+                              setSelectedRooms(
+                                selectedRooms.filter((r) => r !== room)
+                              )
+                            }
+                            className="ml-1 text-blue-600 hover:text-blue-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">
@@ -593,7 +594,11 @@ const BookingManagement = () => {
                 <AlertDialogTrigger asChild>
                   <Button
                     onClick={() => setConfirmationDialog(true)}
-                    disabled={!paymentMethod || selectedRooms.length === 0}
+                    disabled={
+                      !paymentMethod || collectingBooking.status === "in-house"
+                        ? null
+                        : selectedRooms.length === 0
+                    }
                   >
                     Collect Payment
                   </Button>

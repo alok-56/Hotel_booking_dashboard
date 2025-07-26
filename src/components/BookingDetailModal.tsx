@@ -288,7 +288,8 @@ const BookingDetailModal = ({
                     onClick={() => handleStatusUpdate?.(booking.id, "checkout")}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
-                    disabled={isLoading}
+                    disabled={isLoading || booking.pendingamount>0}
+                    
                   >
                     Check-out
                   </Button>
@@ -678,7 +679,7 @@ const BookingDetailModal = ({
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Room charges</span>
                     <span className="text-sm font-medium">
-                      ₹{booking.amount}
+                      ₹{booking.amountCollected}
                     </span>
                   </div>
 
