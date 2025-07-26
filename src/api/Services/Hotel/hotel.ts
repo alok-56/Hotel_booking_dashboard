@@ -29,6 +29,19 @@ export const getAllHotels = async () => {
   return data;
 };
 
+// get company hotels
+
+export const getCompanyHotels = async () => {
+  const res = await fetch(`${BASEURL}/hotel/all`, {
+    headers: {
+      token: TOKEN()!,
+    },
+  });
+  const data = await res.json();
+
+  return data;
+};
+
 // Update hotel
 export const updateHotel = async (id: string, hotel: any) => {
   const res = await fetch(`${BASEURL}/hotel/update/${id}`, {
@@ -82,6 +95,29 @@ export const getAllRooms = async (): Promise<any> => {
   });
 
   const data = await res.json();
+  return data;
+};
+
+// Get all rooms number
+export const GetRoomnumber = async (
+  roomId: string,
+  checkInDate: string,
+  checkOutDate: string
+): Promise<any> => {
+  const params = new URLSearchParams({
+    roomId,
+    checkInDate,
+    checkOutDate,
+  });
+
+  const res = await fetch(`${BASEURL}/room/available/room?${params.toString()}`, {
+    headers: {
+      token: TOKEN() || "",
+    },
+  });
+
+  const data = await res.json();
+
   return data;
 };
 
@@ -190,5 +226,17 @@ export const deleteMenu = async (id: string): Promise<any> => {
 
   const data = await res.json();
 
+  return data;
+};
+
+// all hotel cash
+export const getHotelCash = async (): Promise<any> => {
+  const res = await fetch(`${BASEURL}/expenses/cash`, {
+    headers: {
+      token: TOKEN() || "",
+    },
+  });
+
+  const data = await res.json();
   return data;
 };

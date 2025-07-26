@@ -11,10 +11,15 @@ import {
   X,
   Building,
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getGuestStatusHistory } from "@/api/Services/Booking/booking";
 import { getAllHotels } from "@/api/Services/Hotel/hotel";
-
 
 const GuestDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,15 +29,23 @@ const GuestDirectory = () => {
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [hotels, setHotels] = useState([]);
-  const [selectedHotel, setSelectedHotel] = useState("all"); // Changed from "" to "all"
-  
+  const [selectedHotel, setSelectedHotel] = useState("all");
+
   // Date filter states
-  const [startDate, setStartDate] = useState(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const now = new Date();
+
+  // Start time: today at 11:00 PM
+  const start = new Date(now);
+  start.setHours(23, 0, 0, 0);
+
+  // End time: tomorrow at 10:59:59 PM
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1); 
+  end.setHours(22, 59, 59, 999);
+
+  // Save to state
+  const [startDate, setStartDate] = useState(start.toISOString());
+  const [endDate, setEndDate] = useState(end.toISOString());
 
   // Fetch guests data
   const fetchGuests = async () => {
@@ -92,18 +105,18 @@ const GuestDirectory = () => {
 
   const filteredGuests =
     guests &&
-    guests.filter(
-      (guest) => {
-        const matchesSearch = guest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          guest?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          guest?.phone?.includes(searchTerm);
-        
-        // Updated filter logic to handle "all" value
-        const matchesHotel = selectedHotel === "all" || guest?.hotelId === selectedHotel;
-        
-        return matchesSearch && matchesHotel;
-      }
-    );
+    guests.filter((guest) => {
+      const matchesSearch =
+        guest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest?.phone?.includes(searchTerm);
+
+      // Updated filter logic to handle "all" value
+      const matchesHotel =
+        selectedHotel === "all" || guest?.hotelId === selectedHotel;
+
+      return matchesSearch && matchesHotel;
+    });
 
   // Calculate stats from actual data
   const stats = {
@@ -119,9 +132,11 @@ const GuestDirectory = () => {
   };
 
   const resetDateFilters = () => {
-    const defaultStartDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const defaultStartDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
     const defaultEndDate = new Date().toISOString().split("T")[0];
-    
+
     setStartDate(defaultStartDate);
     setEndDate(defaultEndDate);
   };
@@ -278,7 +293,7 @@ const GuestDirectory = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
-            
+
             <div className="min-w-[200px]">
               <Select value={selectedHotel} onValueChange={setSelectedHotel}>
                 <SelectTrigger>
@@ -294,8 +309,8 @@ const GuestDirectory = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setShowFilters(!showFilters)}
               className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-50"
             >
@@ -308,7 +323,9 @@ const GuestDirectory = () => {
           {showFilters && (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-gray-900">Filter by Date Range</h3>
+                <h3 className="text-sm font-medium text-gray-900">
+                  Filter by Date Range
+                </h3>
                 <button
                   onClick={() => setShowFilters(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -316,7 +333,7 @@ const GuestDirectory = () => {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -329,7 +346,7 @@ const GuestDirectory = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     End Date
@@ -341,7 +358,7 @@ const GuestDirectory = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <button
                     onClick={handleDateFilter}
@@ -357,7 +374,7 @@ const GuestDirectory = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="mt-3 text-sm text-gray-600">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                   Current range: {startDate} to {endDate}

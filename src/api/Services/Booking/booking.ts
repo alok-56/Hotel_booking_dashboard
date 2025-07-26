@@ -35,7 +35,7 @@ export const updateBookingStatus = async (
   paymentMethod: string,
   roomno: string
 ): Promise<any> => {
-  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}&paymentMethod=${paymentMethod}&${roomno}`;
+  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}&paymentMethod=${paymentMethod}&roomno=${roomno}`;
 
   const res = await fetch(url, {
     method: "PATCH",

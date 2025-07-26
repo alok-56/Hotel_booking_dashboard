@@ -40,6 +40,7 @@ const RoomsManagement = () => {
     amenities: [],
     refundable: true,
     availability: "",
+    roomno: [],
   });
 
   // Static room types
@@ -112,9 +113,13 @@ const RoomsManagement = () => {
       console.log("Hotels:", hotelsResponse);
 
       // Ensure we have arrays
-      const roomsData = Array.isArray(roomsResponse?.data) ? roomsResponse.data : [];
-      const hotelsData = Array.isArray(hotelsResponse?.data) ? hotelsResponse.data : [];
-      
+      const roomsData = Array.isArray(roomsResponse?.data)
+        ? roomsResponse.data
+        : [];
+      const hotelsData = Array.isArray(hotelsResponse?.data)
+        ? hotelsResponse.data
+        : [];
+
       setRooms(roomsData);
       setHotels(hotelsData);
       setError("");
@@ -140,11 +145,15 @@ const RoomsManagement = () => {
     // Filter by hotel
     if (selectedHotelFilter && selectedHotelFilter.trim()) {
       filtered = filtered.filter((room) => {
-        // Handle both string and object comparisons
-        const roomHotelId = typeof room.hotelId === 'object' 
-          ? room.hotelId._id || room.hotelId.id 
-          : room.hotelId;
+        // Handle null/undefined hotelId
+        if (!room.hotelId) return false;
         
+        // Handle both string and object comparisons
+        const roomHotelId =
+          typeof room.hotelId === "object" && room.hotelId !== null
+            ? room.hotelId._id || room.hotelId.id
+            : room.hotelId;
+
         return roomHotelId === selectedHotelFilter;
       });
     }
@@ -152,16 +161,16 @@ const RoomsManagement = () => {
     // Filter by search term with safe property access
     if (searchTerm && searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
-      
+
       filtered = filtered.filter((room) => {
         // Safe property access with fallbacks
-        const roomType = (room.roomType || '').toString().toLowerCase();
-        const bedType = (room.bedType || '').toString().toLowerCase();
-        const description = (room.description || '').toString().toLowerCase();
-        
+        const roomType = (room.roomType || "").toString().toLowerCase();
+        const bedType = (room.bedType || "").toString().toLowerCase();
+        const description = (room.description || "").toString().toLowerCase();
+
         // Get hotel name for search
         const hotelName = getHotelName(room.hotelId).toLowerCase();
-        
+
         return (
           roomType.includes(searchLower) ||
           bedType.includes(searchLower) ||
@@ -185,23 +194,24 @@ const RoomsManagement = () => {
       };
 
       const result = await createRoom(roomData);
-      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Room created successfully",
+          variant: "default",
+        });
+      }
+
       // Show success toast
-      toast({
-        title: "Success",
-        description: "Room created successfully",
-        variant: "default",
-      });
-      
+
       await fetchInitialData();
       resetForm();
       setShowModal(false); // Close modal after successful creation
-      
     } catch (err) {
       console.error("Room creation error:", err);
       const errorMessage = err.message || "Failed to create room";
       setError(errorMessage);
-      
+
       toast({
         title: "Room Creation Failed",
         description: errorMessage,
@@ -221,23 +231,22 @@ const RoomsManagement = () => {
       };
 
       await updateRoom(selectedRoom._id, roomData);
-      
+
       // Show success toast
       toast({
         title: "Success",
         description: "Room updated successfully",
         variant: "default",
       });
-      
+
       await fetchInitialData();
       resetForm();
       setShowModal(false);
-      
     } catch (err) {
       console.error("Room update error:", err);
       const errorMessage = err.message || "Failed to update room";
       setError(errorMessage);
-      
+
       toast({
         title: "Room Update Failed",
         description: errorMessage,
@@ -261,6 +270,7 @@ const RoomsManagement = () => {
         amenities: room.amenities || [],
         refundable: room.refundable !== undefined ? room.refundable : true,
         availability: room.availability?.toString() || "",
+        roomno: room.roomno || [],
       });
     } else {
       resetForm();
@@ -280,6 +290,7 @@ const RoomsManagement = () => {
       amenities: [],
       refundable: true,
       availability: "",
+      roomno: [],
     });
     setSelectedRoom(null);
   };
@@ -302,17 +313,66 @@ const RoomsManagement = () => {
     });
   };
 
-  const getHotelName = (hotelId) => {
-    if (!hotelId) return 'Unknown Hotel';
+  // Room numbers management functions
+  const handleRoomNumberChange = (index, value) => {
+    setFormData(prev => {
+      const newRoomNumbers = [...prev.roomno];
+      newRoomNumbers[index] = value;
+      return { ...prev, roomno: newRoomNumbers };
+    });
+  };
+
+  const addRoomNumberField = () => {
+    setFormData(prev => ({
+      ...prev,
+      roomno: [...prev.roomno, ""]
+    }));
+  };
+
+  const removeRoomNumberField = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      roomno: prev.roomno.filter((_, i) => i !== index)
+    }));
+  };
+
+  const generateRoomNumberFields = () => {
+    const availability = parseInt(formData.availability) || 0;
+    const currentRoomNumbers = formData.roomno.length;
     
-    // Handle case where hotelId might be an object with populated hotel data
-    if (typeof hotelId === 'object') {
-      return hotelId.hotelName || hotelId.name || 'Unknown Hotel';
+    if (availability > currentRoomNumbers) {
+      const newRoomNumbers = [...formData.roomno];
+      for (let i = currentRoomNumbers; i < availability; i++) {
+        newRoomNumbers.push("");
+      }
+      setFormData(prev => ({ ...prev, roomno: newRoomNumbers }));
+    } else if (availability < currentRoomNumbers) {
+      setFormData(prev => ({
+        ...prev,
+        roomno: prev.roomno.slice(0, availability)
+      }));
     }
-    
+  };
+
+  useEffect(() => {
+    if (formData.availability && showModal) {
+      generateRoomNumberFields();
+    }
+  }, [formData.availability]);
+
+  const getHotelName = (hotelId) => {
+    if (!hotelId) return "Unknown Hotel";
+
+    // Handle case where hotelId might be an object with populated hotel data
+    if (typeof hotelId === "object" && hotelId !== null) {
+      return hotelId.hotelName || hotelId.name || "Unknown Hotel";
+    }
+
     // Handle case where hotelId is a string ID
     const hotel = hotels.find((h) => h._id === hotelId);
-    return hotel ? (hotel.hotelName || hotel.name || 'Unknown Hotel') : 'Unknown Hotel';
+    return hotel
+      ? hotel.hotelName || hotel.name || "Unknown Hotel"
+      : "Unknown Hotel";
   };
 
   const getStatusBadge = (room) => {
@@ -383,7 +443,7 @@ const RoomsManagement = () => {
             {hotels &&
               hotels.map((hotel) => (
                 <option key={hotel._id} value={hotel._id}>
-                  {hotel.hotelName || hotel.name || 'Unknown Hotel'}
+                  {hotel.hotelName || hotel.name || "Unknown Hotel"}
                 </option>
               ))}
           </select>
@@ -462,6 +522,7 @@ const RoomsManagement = () => {
                   <th className="text-left py-3 px-4 font-medium">
                     Size (sqm)
                   </th>
+                  <th className="text-left py-3 px-4 font-medium">Room Numbers</th>
                   <th className="text-left py-3 px-4 font-medium">Amenities</th>
                   <th className="text-left py-3 px-4 font-medium">Actions</th>
                 </tr>
@@ -470,31 +531,65 @@ const RoomsManagement = () => {
                 {filteredRooms && filteredRooms.length > 0 ? (
                   filteredRooms.map((room) => (
                     <tr key={room._id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium">{room.roomType || 'N/A'}</td>
-                      <td className="py-3 px-4">{getHotelName(room.hotelId)}</td>
-                      <td className="py-3 px-4">{room.bedType || 'N/A'}</td>
+                      <td className="py-3 px-4 font-medium">
+                        {room.roomType || "N/A"}
+                      </td>
+                      <td className="py-3 px-4">
+                        {getHotelName(room.hotelId)}
+                      </td>
+                      <td className="py-3 px-4">{room.bedType || "N/A"}</td>
                       <td className="py-3 px-4">{getStatusBadge(room)}</td>
                       <td className="py-3 px-4">
-                        ₹{room.price ? room.price.toLocaleString() : '0'}
+                        ₹{room.price ? room.price.toLocaleString() : "0"}
                       </td>
                       <td className="py-3 px-4">
                         {room.maxOccupancy || 0} Guest
                         {(room.maxOccupancy || 0) > 1 ? "s" : ""}
                       </td>
-                      <td className="py-3 px-4">{room.sizeSqm || 'N/A'}</td>
+                      <td className="py-3 px-4">{room.sizeSqm || "N/A"}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {room.roomno && room.roomno.length > 0 ? (
+                            <>
+                              {room.roomno
+                                .slice(0, 3)
+                                .map((roomNo, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {roomNo}
+                                  </Badge>
+                                ))}
+                              {room.roomno.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{room.roomno.length - 3}
+                                </Badge>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-xs">
+                              No room numbers
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {room.amenities && room.amenities.length > 0 ? (
                             <>
-                              {room.amenities.slice(0, 3).map((amenity, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {amenity}
-                                </Badge>
-                              ))}
+                              {room.amenities
+                                .slice(0, 3)
+                                .map((amenity, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {amenity}
+                                  </Badge>
+                                ))}
                               {room.amenities.length > 3 && (
                                 <Badge variant="outline" className="text-xs">
                                   +{room.amenities.length - 3}
@@ -502,7 +597,9 @@ const RoomsManagement = () => {
                               )}
                             </>
                           ) : (
-                            <span className="text-gray-400 text-xs">No amenities</span>
+                            <span className="text-gray-400 text-xs">
+                              No amenities
+                            </span>
                           )}
                         </div>
                       </td>
@@ -528,8 +625,13 @@ const RoomsManagement = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="py-8 px-4 text-center text-gray-500">
-                      {rooms.length === 0 ? 'No rooms found' : 'No rooms match your filters'}
+                    <td
+                      colSpan={10}
+                      className="py-8 px-4 text-center text-gray-500"
+                    >
+                      {rooms.length === 0
+                        ? "No rooms found"
+                        : "No rooms match your filters"}
                     </td>
                   </tr>
                 )}
@@ -575,7 +677,7 @@ const RoomsManagement = () => {
                   {hotels &&
                     hotels.map((hotel) => (
                       <option key={hotel._id} value={hotel._id}>
-                        {hotel.hotelName || hotel.name || 'Unknown Hotel'}
+                        {hotel.hotelName || hotel.name || "Unknown Hotel"}
                       </option>
                     ))}
                 </select>
@@ -678,6 +780,65 @@ const RoomsManagement = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
+                  Available Rooms
+                </label>
+                <Input
+                  name="availability"
+                  type="number"
+                  value={formData.availability}
+                  onChange={handleInputChange}
+                  disabled={modalMode === "view"}
+                  placeholder="5"
+                />
+              </div>
+
+              {/* Room Numbers Section */}
+              {formData.availability && parseInt(formData.availability) > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Room Numbers ({formData.roomno.length} of {formData.availability})
+                  </label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
+                    {formData.roomno.map((roomNumber, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          value={roomNumber}
+                          onChange={(e) => handleRoomNumberChange(index, e.target.value)}
+                          disabled={modalMode === "view"}
+                          placeholder={`Room ${index + 1}`}
+                          className="flex-1"
+                        />
+                        {modalMode !== "view" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeRoomNumberField(index)}
+                            className="p-2"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {modalMode !== "view" && formData.roomno.length < parseInt((formData.availability || "0").toString()) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRoomNumberField}
+                        className="w-full"
+                      >
+                        <Plus className="h-3 w-3 mr-2" />
+                        Add Room Number
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
                   Amenities
                 </label>
                 <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
@@ -701,32 +862,16 @@ const RoomsManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Available Rooms
-                  </label>
-                  <Input
-                    name="availability"
-                    type="number"
-                    value={formData.availability}
-                    onChange={handleInputChange}
-                    disabled={modalMode === "view"}
-                    placeholder="5"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2 mt-6">
-                  <input
-                    type="checkbox"
-                    name="refundable"
-                    checked={formData.refundable}
-                    onChange={handleInputChange}
-                    disabled={modalMode === "view"}
-                    className="h-4 w-4"
-                  />
-                  <label className="text-sm font-medium">Refundable</label>
-                </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="refundable"
+                  checked={formData.refundable}
+                  onChange={handleInputChange}
+                  disabled={modalMode === "view"}
+                  className="h-4 w-4"
+                />
+                <label className="text-sm font-medium">Refundable</label>
               </div>
             </div>
 

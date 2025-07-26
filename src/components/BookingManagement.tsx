@@ -41,6 +41,7 @@ import {
   getAllBookings,
   updateBookingStatus,
 } from "@/api/Services/Booking/booking";
+import { GetRoomnumber } from "@/api/Services/Hotel/hotel";
 
 interface Booking {
   id: string;
@@ -61,6 +62,9 @@ interface Booking {
   phoneNumber: string;
   email: string;
   roomno: any;
+  roomId: any;
+  checkindate: any;
+  checkoutdate: any;
 }
 
 const BookingManagement = () => {
@@ -84,6 +88,15 @@ const BookingManagement = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [confirmationDialog, setConfirmationDialog] = useState(false);
+
+  // New state for assign room modal
+  const [showAssignRoom, setShowAssignRoom] = useState(false);
+  const [assigningBooking, setAssigningBooking] = useState<Booking | null>(
+    null
+  );
+  const [assignRooms, setAssignRooms] = useState<string[]>([]);
+  const [roomConfirmationDialog, setRoomConfirmationDialog] = useState(false);
+  const [roomNumbers, setroomNumbers] = useState<string[]>([]);
 
   useEffect(() => {
     loadBookings();
@@ -122,7 +135,7 @@ const BookingManagement = () => {
                 : booking.status === "checkout"
                 ? "completed"
                 : booking.status,
-            paymentStatus: booking.paymentStatus || "pending",
+            paymentStatus: booking.paymentDetails.status || "pending",
             guestCount: booking.guests?.adults || 1,
             childrencount: booking.guests?.children || 0,
             userifo: booking.userInfo || [],
@@ -130,6 +143,9 @@ const BookingManagement = () => {
             source: booking.source || "direct",
             phoneNumber: booking.userInfo?.[0]?.phone || "",
             email: booking.userInfo?.[0]?.email || "",
+            roomId: booking.roomId[0],
+            checkindate: booking.checkInDate,
+            checkoutdate: booking.checkOutDate,
           })
         );
 
@@ -200,18 +216,8 @@ const BookingManagement = () => {
   };
 
   // Static room numbers for now
-  const roomNumbers = [
-    "101",
-    "102",
-    "103",
-    "201",
-    "202",
-    "203",
-    "301",
-    "302",
-    "303",
-  ];
-  const paymentMethods = ["Cash", "Card", "UPI", "Net Banking"];
+
+  const paymentMethods = [ "Cash" , "GooglePay" , "PhonePe" , "Card" , "UPI" , "NetBanking"];
 
   const filteredBookings = bookings
     .filter((booking) => booking.status === activeTab)
@@ -239,11 +245,25 @@ const BookingManagement = () => {
     setShowAddBooking(false);
   };
 
-  const handleCollectPayment = (booking: Booking) => {
-    setCollectingBooking(booking);
-    setShowCollectPayment(true);
-    setPaymentMethod("");
-    setSelectedRooms([]);
+  const handleCollectPayment = async (booking: Booking) => {
+    try {
+      setLoading(true);
+      let res = await GetRoomnumber(
+        booking.roomId._id,
+        booking.checkindate,
+        booking.checkoutdate
+      );
+      if (res.status) {
+        setroomNumbers(res.data);
+        setCollectingBooking(booking);
+        setShowCollectPayment(true);
+        setPaymentMethod("");
+        setSelectedRooms([]);
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConfirmPayment = async () => {
@@ -283,6 +303,78 @@ const BookingManagement = () => {
     }
   };
 
+  // New assign room functions
+  const handleAssignRoom = async (booking: Booking) => {
+    try {
+      setLoading(true);
+      let res = await GetRoomnumber(
+        booking.roomId._id,
+        booking.checkindate,
+        booking.checkoutdate
+      );
+      if (res.status) {
+        setroomNumbers(res.data);
+        setAssigningBooking(booking);
+        setShowAssignRoom(true);
+        setAssignRooms([]);
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmRoomAssignment = async () => {
+    if (!assigningBooking || assignRooms.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please select at least one room",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (assignRooms.length !== assigningBooking.rooms) {
+      toast({
+        title: "Room Count Mismatch",
+        description: `Please select exactly ${assigningBooking.rooms} room(s) for this booking`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      let res = await updateBookingStatus(
+        assigningBooking.id,
+        "assignRoom",
+        "",
+        assignRooms.join(",")
+      );
+
+      if (res.status) {
+        toast({
+          title: "Rooms Assigned",
+          description: `Rooms ${assignRooms.join(
+            ", "
+          )} assigned successfully to ${assigningBooking.guestName}`,
+        });
+      }
+
+      loadBookings();
+      setShowAssignRoom(false);
+      setAssigningBooking(null);
+      setRoomConfirmationDialog(false);
+      setAssignRooms([]);
+    } catch (error) {
+      toast({
+        title: "Assignment Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to assign rooms",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -302,7 +394,7 @@ const BookingManagement = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 New Booking
               </Button>
-              <Button variant="outline" size="icon">
+              {/* <Button variant="outline" size="icon">
                 <Calendar className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="icon">
@@ -310,7 +402,7 @@ const BookingManagement = () => {
               </Button>
               <Button variant="outline" size="icon">
                 <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -373,9 +465,11 @@ const BookingManagement = () => {
                   Status
                 </th>
 
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                {activeTab !== "completed" && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -412,7 +506,10 @@ const BookingManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {booking.rooms} Room , {booking.roomno.join(",")}
+                    {booking.rooms} Room{booking.rooms > 1 ? "s" : ""}{" "}
+                    {booking.roomno && booking.roomno.length > 0
+                      ? `, ${booking.roomno.join(",")}`
+                      : ""}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
@@ -423,7 +520,7 @@ const BookingManagement = () => {
                         Amount collected: ₹{booking.amountCollected}
                       </div>
                     )}
-                    {booking.paymentStatus === "partial" && (
+                    {booking.paymentStatus === "pending" && (
                       <div className="text-sm text-gray-500">
                         Collect at hotel: ₹
                         {booking.amount - booking.amountCollected}
@@ -440,22 +537,43 @@ const BookingManagement = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    {booking.pendingamount > 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCollectPayment(booking);
-                        }}
-                        className="text-green-600 border-green-600 hover:bg-green-50"
-                      >
-                        <DollarSign className="h-4 w-4 mr-1" />
-                        Collect ₹{booking.pendingamount}
-                      </Button>
-                    )}
-                  </td>
+                  {activeTab !== "completed" && (
+                    <td className="px-6 py-4">
+                      <div className="flex space-x-2">
+                        {booking.pendingamount > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCollectPayment(booking);
+                            }}
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Collect ₹{booking.pendingamount}
+                          </Button>
+                        )}
+
+                        {booking.status === "upcoming" &&
+                          booking.paymentStatus === "paid" &&
+                          booking.roomno.length === 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssignRoom(booking);
+                              }}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            >
+                              <Bed className="h-4 w-4 mr-1" />
+                              Assign Room
+                            </Button>
+                          )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -526,52 +644,68 @@ const BookingManagement = () => {
               {collectingBooking.status === "in-house" ? null : (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assign Rooms *
+                    Booking requires: {collectingBooking.rooms} room
+                    {collectingBooking.rooms > 1 ? "s" : ""}
                   </label>
-                  <Select
-                    value={selectedRooms.join(",")}
-                    onValueChange={(value) => {
-                      if (value && !selectedRooms.includes(value)) {
-                        setSelectedRooms([...selectedRooms, value]);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room numbers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roomNumbers
-                        .filter((room) => !selectedRooms.includes(room))
-                        .map((room) => (
-                          <SelectItem key={room} value={room}>
-                            Room {room}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
 
-                  {selectedRooms.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {selectedRooms.map((room, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
-                        >
-                          Room {room}
-                          <button
-                            onClick={() =>
-                              setSelectedRooms(
-                                selectedRooms.filter((r) => r !== room)
-                              )
-                            }
-                            className="ml-1 text-blue-600 hover:text-blue-800"
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Rooms *
+                    </label>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (
+                          value &&
+                          !selectedRooms.includes(value) &&
+                          selectedRooms.length < collectingBooking.rooms
+                        ) {
+                          setSelectedRooms([...selectedRooms, value]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room numbers" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roomNumbers
+                          .filter((room) => !selectedRooms.includes(room))
+                          .map((room) => (
+                            <SelectItem key={room} value={room}>
+                              Room {room}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedRooms.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedRooms.map((room, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
                           >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                            Room {room}
+                            <button
+                              onClick={() =>
+                                setSelectedRooms(
+                                  selectedRooms.filter((r) => r !== room)
+                                )
+                              }
+                              className="ml-1 text-blue-600 hover:text-blue-800"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-2 text-sm text-gray-500">
+                      Selected: {selectedRooms.length} /{" "}
+                      {collectingBooking.rooms} rooms
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
@@ -620,6 +754,136 @@ const BookingManagement = () => {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmPayment}>
                       Confirm Collection
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Room Modal */}
+      {showAssignRoom && assigningBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              Assign Rooms for {assigningBooking.guestName}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Booking requires: {assigningBooking.rooms} room
+                  {assigningBooking.rooms > 1 ? "s" : ""}
+                </label>
+                <label className="block text-sm text-gray-500 mb-2">
+                  Check-in: {assigningBooking.checkIn} | Check-out:{" "}
+                  {assigningBooking.checkOut}
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Rooms *
+                </label>
+                <Select
+                  value=""
+                  onValueChange={(value) => {
+                    if (
+                      value &&
+                      !assignRooms.includes(value) &&
+                      assignRooms.length < assigningBooking.rooms
+                    ) {
+                      setAssignRooms([...assignRooms, value]);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room numbers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomNumbers
+                      .filter((room) => !assignRooms.includes(room))
+                      .map((room) => (
+                        <SelectItem key={room} value={room}>
+                          Room {room}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                {assignRooms.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {assignRooms.map((room, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
+                      >
+                        Room {room}
+                        <button
+                          onClick={() =>
+                            setAssignRooms(
+                              assignRooms.filter((r) => r !== room)
+                            )
+                          }
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-2 text-sm text-gray-500">
+                  Selected: {assignRooms.length} / {assigningBooking.rooms}{" "}
+                  rooms
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAssignRoom(false);
+                  setAssigningBooking(null);
+                  setAssignRooms([]);
+                }}
+              >
+                Cancel
+              </Button>
+
+              <AlertDialog
+                open={roomConfirmationDialog}
+                onOpenChange={setRoomConfirmationDialog}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button
+                    onClick={() => setRoomConfirmationDialog(true)}
+                    disabled={assignRooms.length !== assigningBooking.rooms}
+                  >
+                    Assign Rooms
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Room Assignment</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to assign rooms{" "}
+                      {assignRooms.join(", ")} to {assigningBooking.guestName}?
+                      <br />
+                      Booking ID: {assigningBooking.bookingId}
+                      <br />
+                      Stay Period: {assigningBooking.checkIn} -{" "}
+                      {assigningBooking.checkOut}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmRoomAssignment}>
+                      Confirm Assignment
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

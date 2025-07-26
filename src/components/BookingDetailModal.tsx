@@ -222,7 +222,7 @@ const BookingDetailModal = ({
       (sum, addon) => sum + addon.cost,
       0
     );
-    return booking.amount + addonsTotal + pendingTotal;
+    return booking.amount + pendingTotal;
   };
 
   return (
@@ -243,7 +243,7 @@ const BookingDetailModal = ({
               </Button>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {booking.guestName} + {booking.guestCount-1}
+                  {booking.guestName} + {booking.guestCount - 1}
                 </h2>
                 <div className="flex items-center mt-1">
                   <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-2">
@@ -258,7 +258,9 @@ const BookingDetailModal = ({
               {booking.status === "upcoming" ? (
                 <>
                   <Button
-                    onClick={() => handleStatusUpdate?.(booking.id, "cancelled")}
+                    onClick={() =>
+                      handleStatusUpdate?.(booking.id, "cancelled")
+                    }
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
                     disabled={isLoading}
@@ -269,7 +271,11 @@ const BookingDetailModal = ({
                     onClick={() => handleStatusUpdate?.(booking.id, "checkin")}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
-                    disabled={isLoading || booking.pendingamount>0}
+                    disabled={
+                      isLoading ||
+                      booking.pendingamount > 0 ||
+                      booking.roomno.length === 0
+                    }
                   >
                     Check-in
                   </Button>
@@ -288,8 +294,7 @@ const BookingDetailModal = ({
                     onClick={() => handleStatusUpdate?.(booking.id, "checkout")}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
-                    disabled={isLoading || booking.pendingamount>0}
-                    
+                    disabled={isLoading || booking.pendingamount > 0}
                   >
                     Check-out
                   </Button>
@@ -365,7 +370,8 @@ const BookingDetailModal = ({
                     {booking.guestName}, + {booking.guestCount - 1}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {booking.guestCount} Adults, {booking.childrencount} Children
+                    {booking.guestCount} Adults, {booking.childrencount}{" "}
+                    Children
                   </p>
                 </div>
 
@@ -376,47 +382,58 @@ const BookingDetailModal = ({
                       Guest Information
                     </h4>
                     <div className="space-y-3">
-                      {booking.userifo && booking.userifo.map((user, index) => (
-                        <div
-                          key={user._id}
-                          className="border border-gray-200 rounded-lg p-3 bg-gray-50"
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-xs text-gray-500">Name:</span>
-                              <p className="text-sm font-medium text-gray-900">
-                                {user.name}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500">Phone:</span>
-                              <p className="text-sm text-gray-700">
-                                {user.phone}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500">Email:</span>
-                              <p className="text-sm text-gray-700">
-                                {user.email}
-                              </p>
-                            </div>
-                            <div className="flex gap-4">
+                      {booking.userifo &&
+                        booking.userifo.map((user, index) => (
+                          <div
+                            key={user._id}
+                            className="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               <div>
-                                <span className="text-xs text-gray-500">Age:</span>
-                                <p className="text-sm text-gray-700">
-                                  {user.age}
+                                <span className="text-xs text-gray-500">
+                                  Name:
+                                </span>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {user.name}
                                 </p>
                               </div>
                               <div>
-                                <span className="text-xs text-gray-500">Gender:</span>
-                                <p className="text-sm text-gray-700 capitalize">
-                                  {user.gender}
+                                <span className="text-xs text-gray-500">
+                                  Phone:
+                                </span>
+                                <p className="text-sm text-gray-700">
+                                  {user.phone}
                                 </p>
+                              </div>
+                              <div>
+                                <span className="text-xs text-gray-500">
+                                  Email:
+                                </span>
+                                <p className="text-sm text-gray-700">
+                                  {user.email}
+                                </p>
+                              </div>
+                              <div className="flex gap-4">
+                                <div>
+                                  <span className="text-xs text-gray-500">
+                                    Age:
+                                  </span>
+                                  <p className="text-sm text-gray-700">
+                                    {user.age}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">
+                                    Gender:
+                                  </span>
+                                  <p className="text-sm text-gray-700 capitalize">
+                                    {user.gender}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
@@ -424,246 +441,250 @@ const BookingDetailModal = ({
             </div>
           </div>
 
-          {
-            booking.status==="completed" || booking.status==="upcoming" ? null: <div className="bg-white rounded-lg border border-gray-200">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Add-ons & Services
-                </h3>
-                <Button
-                  onClick={() => setShowAddonForm(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Service
-                </Button>
-              </div>
+          {booking.status === "completed" ||
+          booking.status === "upcoming" ? null : (
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Add-ons & Services
+                  </h3>
+                  <Button
+                    onClick={() => setShowAddonForm(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    disabled={isLoading}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Service
+                  </Button>
+                </div>
 
-              {/* Addon Form */}
-              {showAddonForm && (
-                <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Service Type
-                      </label>
-                      <select
-                        value={addonForm.type}
-                        onChange={(e) => handleAddonTypeChange(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={isLoading}
-                      >
-                        {addonTypes.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {addonForm.type === "menu" && (
+                {/* Addon Form */}
+                {showAddonForm && (
+                  <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Select Menu Item
+                          Service Type
                         </label>
                         <select
-                          value={addonForm.selectedMenu}
-                          onChange={(e) => handleMenuSelect(e.target.value)}
+                          value={addonForm.type}
+                          onChange={(e) =>
+                            handleAddonTypeChange(e.target.value)
+                          }
                           className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           disabled={isLoading}
                         >
-                          <option value="">Choose a menu item</option>
-                          {menuItems &&
-                            menuItems.map((item) => (
-                              <option key={item._id} value={item._id}>
-                                {item.menuname} - ₹{item.price}
-                              </option>
-                            ))}
+                          {addonTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
-                    )}
 
-                    {addonForm.type !== "menu" && (
+                      {addonForm.type === "menu" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Select Menu Item
+                          </label>
+                          <select
+                            value={addonForm.selectedMenu}
+                            onChange={(e) => handleMenuSelect(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={isLoading}
+                          >
+                            <option value="">Choose a menu item</option>
+                            {menuItems &&
+                              menuItems.map((item) => (
+                                <option key={item._id} value={item._id}>
+                                  {item.menuname} - ₹{item.price}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {addonForm.type !== "menu" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Service Name
+                          </label>
+                          <input
+                            type="text"
+                            value={addonForm.serviceName}
+                            onChange={(e) =>
+                              setAddonForm({
+                                ...addonForm,
+                                serviceName: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter service name"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      )}
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Service Name
+                          Cost (₹)
                         </label>
                         <input
-                          type="text"
-                          value={addonForm.serviceName}
+                          type="number"
+                          value={addonForm.cost}
                           onChange={(e) =>
                             setAddonForm({
                               ...addonForm,
-                              serviceName: e.target.value,
+                              cost: Number(e.target.value),
                             })
                           }
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Enter service name"
-                          disabled={isLoading}
+                          disabled={addonForm.type === "menu" || isLoading}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                          placeholder="Enter cost"
                         />
                       </div>
-                    )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cost (₹)
-                      </label>
-                      <input
-                        type="number"
-                        value={addonForm.cost}
-                        onChange={(e) =>
-                          setAddonForm({
-                            ...addonForm,
-                            cost: Number(e.target.value),
-                          })
-                        }
-                        disabled={addonForm.type === "menu" || isLoading}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                        placeholder="Enter cost"
-                      />
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={addToPendingList}
-                        className="bg-green-600 hover:bg-green-700"
-                        disabled={isLoading}
-                      >
-                        Add to List
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setShowAddonForm(false);
-                          setPendingAddons([]);
-                        }}
-                        variant="outline"
-                        disabled={isLoading}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Pending Addons List */}
-                  {pendingAddons.length > 0 && (
-                    <div className="mt-4 border-t pt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-gray-900">
-                          Pending Services ({pendingAddons.length})
-                        </h4>
+                      <div className="flex gap-2">
                         <Button
-                          onClick={uploadAllPendingAddons}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          onClick={addToPendingList}
+                          className="bg-green-600 hover:bg-green-700"
                           disabled={isLoading}
                         >
-                          {isLoading ? "Uploading..." : "Upload All"}
+                          Add to List
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowAddonForm(false);
+                            setPendingAddons([]);
+                          }}
+                          variant="outline"
+                          disabled={isLoading}
+                        >
+                          Cancel
                         </Button>
                       </div>
-                      <div className="space-y-2">
-                        {pendingAddons.map((addon) => (
-                          <div
-                            key={addon.id}
-                            className="flex items-center justify-between p-2 bg-yellow-50 rounded border"
-                          >
-                            <div>
-                              <span className="font-medium text-gray-900">
-                                {addon.serviceName}
-                              </span>
-                              <span className="ml-2 text-sm text-gray-500">
-                                ₹{addon.cost}
-                              </span>
-                            </div>
-                            <Button
-                              onClick={() => removePendingAddon(addon.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* Active Addons List - Updated to pass index instead of ID */}
-              {addons.length > 0 ? (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Active Services
-                  </h4>
-                  {addons.map((addon, index) => (
-                    <div
-                      key={addon._id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900">
-                          {addon.serviceName}
-                        </span>
-                        <span className="ml-2 text-sm text-gray-500">
-                          ₹{addon.cost}
-                        </span>
-                        {addon.status && (
-                          <span
-                            className={`ml-2 text-xs px-2 py-1 rounded ${
-                              addon.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : addon.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {addon.status}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        {addon.status === "pending" && (
+                    {/* Pending Addons List */}
+                    {pendingAddons.length > 0 && (
+                      <div className="mt-4 border-t pt-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-gray-900">
+                            Pending Services ({pendingAddons.length})
+                          </h4>
                           <Button
-                            onClick={() =>
-                              handleUpdateAddon(index, { status: "completed" })
-                            }
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                            onClick={uploadAllPendingAddons}
+                            className="bg-blue-600 hover:bg-blue-700"
                             disabled={isLoading}
                           >
-                            Complete
+                            {isLoading ? "Uploading..." : "Upload All"}
                           </Button>
-                        )}
-                        <Button
-                          onClick={() => handleDeleteAddon(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          disabled={isLoading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {pendingAddons.map((addon) => (
+                            <div
+                              key={addon.id}
+                              className="flex items-center justify-between p-2 bg-yellow-50 rounded border"
+                            >
+                              <div>
+                                <span className="font-medium text-gray-900">
+                                  {addon.serviceName}
+                                </span>
+                                <span className="ml-2 text-sm text-gray-500">
+                                  ₹{addon.cost}
+                                </span>
+                              </div>
+                              <Button
+                                onClick={() => removePendingAddon(addon.id)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                disabled={isLoading}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No add-on services added yet
-                </p>
-              )}
+                    )}
+                  </div>
+                )}
+
+                {/* Active Addons List - Updated to pass index instead of ID */}
+                {addons.length > 0 ? (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      Active Services
+                    </h4>
+                    {addons.map((addon, index) => (
+                      <div
+                        key={addon._id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <span className="font-medium text-gray-900">
+                            {addon.serviceName}
+                          </span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            ₹{addon.cost}
+                          </span>
+                          {addon.status && (
+                            <span
+                              className={`ml-2 text-xs px-2 py-1 rounded ${
+                                addon.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : addon.status === "completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {addon.status}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          {addon.status === "pending" && (
+                            <Button
+                              onClick={() =>
+                                handleUpdateAddon(index, {
+                                  status: "completed",
+                                })
+                              }
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                              disabled={isLoading}
+                            >
+                              Complete
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => handleDeleteAddon(index)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            disabled={isLoading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No add-on services added yet
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          }
+          )}
 
           {/* Addons Section */}
-         
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bill Summary */}
@@ -720,8 +741,6 @@ const BookingDetailModal = ({
                       </div>
                     </>
                   )}
-
-                 
 
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold">
