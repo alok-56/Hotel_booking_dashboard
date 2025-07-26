@@ -46,67 +46,66 @@ const BookingReport = () => {
 
   // Date range calculations
   const getDateRange = (period, customDateRange = {}) => {
-  const now = new Date();
-  let from, to;
+    const now = new Date();
+    let from, to;
 
-  switch (period) {
-    case "today": {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0); // today at 12:00 AM
+    switch (period) {
+      case "today": {
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0); // today at 12:00 AM
 
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999); // today at 11:59:59 PM
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999); // today at 11:59:59 PM
 
-      from = start.toISOString();
-      to = end.toISOString();
-      break;
+        from = start.toISOString();
+        to = end.toISOString();
+        break;
+      }
+
+      case "week": {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+
+        from = start.toISOString();
+        to = end.toISOString();
+        break;
+      }
+
+      case "month": {
+        const start = new Date(now);
+        start.setMonth(start.getMonth() - 1);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+
+        from = start.toISOString();
+        to = end.toISOString();
+        break;
+      }
+
+      case "custom":
+        return customDateRange;
+
+      default: {
+        const start = new Date(now);
+        start.setMonth(start.getMonth() - 6);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+
+        from = start.toISOString();
+        to = end.toISOString();
+      }
     }
 
-    case "week": {
-      const start = new Date(now);
-      start.setDate(start.getDate() - 7);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-
-      from = start.toISOString();
-      to = end.toISOString();
-      break;
-    }
-
-    case "month": {
-      const start = new Date(now);
-      start.setMonth(start.getMonth() - 1);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-
-      from = start.toISOString();
-      to = end.toISOString();
-      break;
-    }
-
-    case "custom":
-      return customDateRange;
-
-    default: {
-      const start = new Date(now);
-      start.setMonth(start.getMonth() - 6);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-
-      from = start.toISOString();
-      to = end.toISOString();
-    }
-  }
-
-  return { from, to };
-};
-
+    return { from, to };
+  };
 
   // Handle custom date period selection
   const handleCustomPeriodClick = () => {
