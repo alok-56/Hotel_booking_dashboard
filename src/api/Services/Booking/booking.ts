@@ -33,9 +33,13 @@ export const updateBookingStatus = async (
   bookingId: string,
   status: string,
   paymentMethod: string,
-  roomno: string
+  roomno: string,
+  collectingAmount?: string
 ): Promise<any> => {
-  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}&paymentMethod=${paymentMethod}&roomno=${roomno}`;
+  console.log(roomno);
+  const url = `${BASEURL}/booking/update-status?status=${status}&bookingid=${bookingId}&paymentMethod=${paymentMethod}&roomno=${roomno}&amount=${Number(
+    collectingAmount
+  )}`;
 
   const res = await fetch(url, {
     method: "PATCH",
@@ -49,16 +53,27 @@ export const updateBookingStatus = async (
   return data;
 };
 
-export const getAllBookingPayments = async (): Promise<any> => {
-  const res = await fetch(`${BASEURL}/booking/payment/all`, {
+export const getAllBookingPayments = async (
+  page = 1,
+  limit = 10,
+  status?: string
+): Promise<any> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (status) {
+    params.append("status", status);
+  }
+
+  const res = await fetch(`${BASEURL}/booking/payment/all?${params}`, {
     headers: {
       token: TOKEN() || "",
     },
   });
 
-  const data = await res.json();
-
-  return data;
+  return res.json();
 };
 
 export const createAddon = async (

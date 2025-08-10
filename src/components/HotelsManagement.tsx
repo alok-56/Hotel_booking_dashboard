@@ -1790,7 +1790,7 @@ const HotelsManagement = () => {
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                 {isDocument ? (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    <FileText className="h-12 w-12 text-gray-400 mb-2" />
+                    <FileText  className="h-12 w-12 text-gray-400 mb-2" />
                     <span className="text-xs text-center px-2 truncate">
                       {file.caption}
                     </span>
@@ -1806,7 +1806,7 @@ const HotelsManagement = () => {
 
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2">
-                    {!isDocument && (
+                    
                       <Button
                         size="sm"
                         variant="secondary"
@@ -1818,7 +1818,7 @@ const HotelsManagement = () => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                    )}
+                    
                     <Button
                       size="sm"
                       variant="destructive"

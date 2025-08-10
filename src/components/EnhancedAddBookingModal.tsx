@@ -65,7 +65,7 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
   const [loading, setLoading] = useState(true);
 
   // Form data
-  const [selectedHotel, setSelectedHotel] = useState("");
+  const [selectedHotel, setSelectedHotel] = useState<string>("");
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [checkOutDate, setCheckOutDate] = useState<Date>();
   const [adults, setAdults] = useState(1);
@@ -80,9 +80,11 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
     },
   ]);
   const [selectedRoomType, setSelectedRoomType] = useState("");
-  const [selectedRoomId,setSelectedRoomId]=useState("")
+  const [selectedRoomId, setSelectedRoomId] = useState([]);
   const [selectedRoomPrice, setSelectedRoomPrice] = useState(0);
   const [notes, setNotes] = useState("");
+  const [bookingSource, setBookingSource] = useState("");
+  const [bookingId, setBookingId] = useState("");
 
   useEffect(() => {
     loadHotels();
@@ -202,10 +204,36 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
     }
   };
 
-  const handleRoomSelect = (roomType: string, price: number, _id: string) => {
-    setSelectedRoomType(roomType);
-    setSelectedRoomPrice(price);
-    setSelectedRoomId(_id)
+  interface SelectedRoom {
+    _id: string;
+    roomType: string;
+    customPrice: number;
+    quantity: number;
+  }
+
+  const handleRoomSelect = (selectedRooms: SelectedRoom[]) => {
+    console.log("Selected Rooms:", selectedRooms);
+
+    if (selectedRooms.length > 0) {
+      const totalPrice = selectedRooms.reduce(
+        (total, room) => total + room.customPrice * room.quantity,
+        0
+      );
+      const roomTypes = selectedRooms
+        .map((room) => `${room.roomType} (${room.quantity})`)
+        .join(", ");
+
+      const roomIds = selectedRooms.map((room) => room._id);
+      setSelectedRoomType(roomTypes);
+      setSelectedRoomPrice(totalPrice);
+      setSelectedRoomId(roomIds);
+
+      console.log(totalPrice);
+    } else {
+      setSelectedRoomType("");
+      setSelectedRoomPrice(0);
+      setSelectedRoomId([]);
+    }
   };
 
   const handleBookingSuccess = () => {
@@ -280,7 +308,7 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
 
         <div className="p-6">
           {/* Step 1: Hotel & Dates */}
-          {currentStep === 1 && (
+          {/* {currentStep === 1 && (
             <div className="space-y-6">
               <div>
                 <Label htmlFor="hotel">Select Hotel</Label>
@@ -321,7 +349,11 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
                         mode="single"
                         selected={checkInDate}
                         onSelect={setCheckInDate}
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -349,7 +381,193 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
                         mode="single"
                         selected={checkOutDate}
                         onSelect={setCheckOutDate}
-                        disabled={(date) => date <= (checkInDate || new Date())}
+                        disabled={(date) => {
+                          const minCheckout = checkInDate
+                            ? new Date(checkInDate)
+                            : new Date();
+                          minCheckout.setHours(0, 0, 0, 0);
+                          return date <= minCheckout;
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Adults</Label>
+                  <div className="flex items-center border border-gray-300 rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAdults(Math.max(1, adults - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 text-sm font-medium">
+                      {adults}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAdults(adults + 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Children</Label>
+                  <div className="flex items-center border border-gray-300 rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setChildren(Math.max(0, children - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 text-sm font-medium">
+                      {children}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setChildren(children + 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {checkInDate && checkOutDate && (
+                <div className="text-sm text-gray-600">
+                  Duration: {calculateNights()} night
+                  {calculateNights() !== 1 ? "s" : ""}
+                </div>
+              )}
+            </div>
+          )} */}
+
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="hotel">Select Hotel</Label>
+                <Select value={selectedHotel} onValueChange={setSelectedHotel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a hotel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hotels.map((hotel) => (
+                      <SelectItem key={hotel._id} value={hotel._id}>
+                        {hotel.hotelName} - {hotel.city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bookingSource">Booking Source</Label>
+                  <Select
+                    value={bookingSource}
+                    onValueChange={setBookingSource}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select booking source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="walkin">Walk in</SelectItem>
+                      <SelectItem value="website">Our Website</SelectItem>
+                      <SelectItem value="booking.com">Booking.com</SelectItem>
+                      <SelectItem value="agoda">Agoda</SelectItem>
+                      <SelectItem value="expedia">Expedia</SelectItem>
+                      <SelectItem value="makemytrip">MakeMyTrip</SelectItem>
+                      <SelectItem value="oyo">Oyo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="bookingId">Booking ID</Label>
+                  <Input
+                    id="bookingId"
+                    type="text"
+                    placeholder="Enter booking ID"
+                    value={bookingId}
+                    onChange={(e) => setBookingId(e.target.value)}
+                    disabled={
+                      bookingSource === "website" || bookingSource === "walkin"
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Check-in Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !checkInDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {checkInDate
+                          ? format(checkInDate, "PPP")
+                          : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkInDate}
+                        onSelect={setCheckInDate}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <Label>Check-out Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !checkOutDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {checkOutDate
+                          ? format(checkOutDate, "PPP")
+                          : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkOutDate}
+                        onSelect={setCheckOutDate}
+                        disabled={(date) => {
+                          const minCheckout = checkInDate
+                            ? new Date(checkInDate)
+                            : new Date();
+                          minCheckout.setHours(0, 0, 0, 0);
+                          return date <= minCheckout;
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -423,7 +641,6 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
                 checkInDate={checkInDate.toISOString()}
                 checkOutDate={checkOutDate.toISOString()}
                 onRoomSelect={handleRoomSelect}
-                selectedRoomType={selectedRoomType}
               />
             )}
 
@@ -549,13 +766,15 @@ const EnhancedAddBookingModal: React.FC<AddBookingModalProps> = ({
             <BookingCheckout
               bookingData={{
                 hotelId: selectedHotel,
-                roomId: [selectedRoomId], // This should be room ID, but we're using room type for now
+                roomId: selectedRoomId,
                 checkInDate: checkInDate!.toISOString(),
                 checkOutDate: checkOutDate!.toISOString(),
                 userInfo,
                 guests: { adults, children },
                 roomPrice: selectedRoomPrice,
                 nights: calculateNights(),
+                bookingSource: bookingSource,
+                bookingId: bookingId,
               }}
               onSuccess={handleBookingSuccess}
               onCancel={onClose}

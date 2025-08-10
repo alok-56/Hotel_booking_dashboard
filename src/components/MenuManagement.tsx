@@ -296,10 +296,7 @@ const MenuManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
+         
         </div>
         <Button onClick={openCreateModal}>
           <Plus className="h-4 w-4 mr-2" />

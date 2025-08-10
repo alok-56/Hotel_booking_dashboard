@@ -104,4 +104,3 @@ export const getBookingSummaryReport = async ({
 
   return await res.json();
 };
-

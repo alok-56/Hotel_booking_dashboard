@@ -26,7 +26,7 @@ const BookingReport = () => {
   const [reportData, setReportData] = useState(null);
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [selectedPeriod, setSelectedPeriod] = useState("today");
   const [selectedHotel, setSelectedHotel] = useState("all");
 
   // Custom date range states
