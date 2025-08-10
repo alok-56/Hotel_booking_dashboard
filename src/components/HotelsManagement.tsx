@@ -1511,6 +1511,8 @@ const HotelsManagement = () => {
     "Card",
     "UPI",
     "NetBanking",
+    "Paytm",
+    "Cheque"
   ];
   const covidMeasureOptions = [
     "Enhanced cleaning",

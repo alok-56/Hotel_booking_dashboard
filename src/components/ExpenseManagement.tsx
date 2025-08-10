@@ -801,9 +801,12 @@ const ExpenseManagement = () => {
                     }
                   >
                     <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="GooglePay">Google Pay</option>
+                    <option value="PhonePe">PhonePe</option>
                     <option value="Card">Card</option>
                     <option value="UPI">UPI</option>
+                    <option value="NetBanking">Net Banking</option>
+                    <option value="Paytm">Paytm</option>
                     <option value="Cheque">Cheque</option>
                   </select>
                 </div>

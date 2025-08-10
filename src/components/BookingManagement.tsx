@@ -1127,6 +1127,8 @@ const BookingManagement = () => {
     "Card",
     "UPI",
     "NetBanking",
+    "Paytm",
+    "Cheque"
   ];
 
   // Filter valid room numbers to prevent empty string values
@@ -1169,7 +1171,6 @@ const BookingManagement = () => {
         booking.checkoutdate
       );
       if (res.status) {
-       
         setroomNumbers(getValidRoomNumbers(res.data || []));
         setCollectingBooking(booking);
         setShowCollectPayment(true);
