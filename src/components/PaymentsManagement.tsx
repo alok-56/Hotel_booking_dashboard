@@ -236,9 +236,9 @@ const PaymentsManagement = () => {
       if (exportResponse.status && exportResponse.data) {
         exportData = exportResponse.data.map((payment) => ({
           "Payment ID": payment.merchantTransactionId,
-          Customer: payment.bookingId?.userInfo?.[0]?.name || "N/A",
+          Customer: payment?.bookingId?.userInfo?.[0]?.name || "N/A",
           Hotel: payment.hotelId?.hotelName || "N/A",
-          "Total Amount": payment.bookingId?.totalAmount || 0,
+          "Total Amount": payment?.bookingId?.totalAmount || 0,
           "Room Amount": payment.totalAmount || 0,
           "Add-on Amount":
             (payment.bookingId?.totalAmount || 0) - (payment.totalAmount || 0),
@@ -306,7 +306,6 @@ const PaymentsManagement = () => {
       XLSX.writeFile(wb, filename);
     } catch (error) {
       console.error("Export failed:", error);
-      // You might want to show a toast notification here
     }
   };
 
@@ -335,11 +334,11 @@ const PaymentsManagement = () => {
                 ? "Pending"
                 : "Failed",
             method: payment.paymentMethod,
-            customer: payment.bookingId?.userInfo?.[0]?.name || "N/A",
-            totalAmount: payment.bookingId.totalAmount,
-            amountPaid: payment.bookingId.amountPaid || 0,
+            customer: payment?.bookingId?.userInfo?.[0]?.name || "N/A",
+            totalAmount: payment?.bookingId?.totalAmount,
+            amountPaid: payment?.bookingId?.amountPaid || 0,
             pendingAmount: payment.pendingAmount || 0,
-            addon: payment.bookingId.totalAmount - payment.totalAmount,
+            addon: payment?.bookingId?.totalAmount - payment.totalAmount,
           }));
 
           setPayments(transformedPayments);
