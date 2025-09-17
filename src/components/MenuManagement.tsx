@@ -7,6 +7,7 @@ import {
   Edit,
   Trash2,
   X,
+  Download,
 } from "lucide-react";
 import {
   Card,
@@ -20,6 +21,7 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { PageSkeleton, CardSkeleton, StatsCardSkeleton } from "./SkeletonLoader";
+import * as XLSX from 'xlsx';
 
 // Import your API functions (adjust the path as needed)
 import {
@@ -256,7 +258,83 @@ const MenuManagement = () => {
 
   const getHotelName = (hotelId) => {
     const hotel = hotels.find((h) => h._id === hotelId);
-    return hotel?.name || "Unknown Hotel";
+    return hotel?.name || hotel?.hotelName || "Unknown Hotel";
+  };
+
+  // Excel Export Function
+  const exportToExcel = () => {
+    try {
+      // Prepare data for Excel export
+      const exportData = filteredMenus.map((item, index) => ({
+        'S.No': index + 1,
+        'Menu Name': item.menuname || 'N/A',
+        'Hotel Name': getHotelName(item.hotelId),
+        'Category': item.category || 'N/A',
+        'Price (₹)': item.price || 0,
+        'Availability': item.isavailable === false ? 'Out of Stock' : 'Available',
+        'Description': item.description || 'No description available',
+        'Hotel ID': item.hotelId || 'N/A',
+        'Menu ID': item._id || 'N/A'
+      }));
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 8 },  // S.No
+        { wch: 25 }, // Menu Name
+        { wch: 20 }, // Hotel Name
+        { wch: 15 }, // Category
+        { wch: 12 }, // Price
+        { wch: 15 }, // Availability
+        { wch: 30 }, // Description
+        { wch: 15 }, // Hotel ID
+        { wch: 15 }  // Menu ID
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Menu Items');
+
+      // Add summary sheet with statistics
+      const summaryData = [
+        { Metric: 'Total Menu Items', Value: menuItems.length },
+        { Metric: 'Available Items', Value: menuItems.filter(item => item.isavailable !== false).length },
+        { Metric: 'Out of Stock Items', Value: menuItems.filter(item => item.isavailable === false).length },
+        { Metric: 'Average Price (₹)', Value: Math.round(menuItems.reduce((sum, item) => sum + (item.price || 0), 0) / (menuItems.length || 1)) },
+        { Metric: 'Total Hotels', Value: hotels.length },
+        { Metric: 'Export Date', Value: new Date().toLocaleString() },
+        { Metric: 'Filter Applied', Value: selectedCategory === 'All' ? 'None' : selectedCategory },
+        { Metric: 'Search Term', Value: searchTerm || 'None' }
+      ];
+
+      const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+      summaryWorksheet['!cols'] = [{ wch: 20 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+      const categoryFilter = selectedCategory === 'All' ? 'All-Categories' : selectedCategory.replace(/\s+/g, '-');
+      const filename = `Menu-Report-${categoryFilter}-${timestamp}.xlsx`;
+
+      // Save the file
+      XLSX.writeFile(workbook, filename);
+
+      toast({
+        title: "Export Successful",
+        description: `Menu data exported to ${filename}`,
+      });
+
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export menu data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Calculate stats
@@ -296,12 +374,17 @@ const MenuManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-         
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Menu Item
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={exportToExcel}>
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Menu Item
+          </Button>
+        </div>
       </div>
 
       {/* Category Filters */}

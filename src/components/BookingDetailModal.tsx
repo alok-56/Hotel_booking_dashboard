@@ -1081,17 +1081,32 @@ const BookingDetailModal = ({
               {booking.status === "upcoming" ? (
                 <>
                   <Button
-                    onClick={() =>
-                      handleStatusUpdate?.(booking.id, "cancelled")
-                    }
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to cancel this booking?"
+                        )
+                      ) {
+                        handleStatusUpdate?.(booking.id, "cancelled");
+                      }
+                    }}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
                     disabled={isLoading}
                   >
                     Cancel Booking
                   </Button>
+
                   <Button
-                    onClick={() => handleStatusUpdate?.(booking.id, "checkin")}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to checkin this booking?"
+                        )
+                      ) {
+                        handleStatusUpdate?.(booking.id, "checkin");
+                      }
+                    }}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
                     disabled={
@@ -1114,7 +1129,15 @@ const BookingDetailModal = ({
               ) : booking.status === "in-house" ? (
                 <>
                   <Button
-                    onClick={() => handleStatusUpdate?.(booking.id, "checkout")}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to checkout this booking?"
+                        )
+                      ) {
+                        handleStatusUpdate?.(booking.id, "checkout");
+                      }
+                    }}
                     variant="outline"
                     className="bg-gray-900 text-gray hover:bg-gray-800 hover:text-white"
                     disabled={isLoading || booking.pendingamount > 0}

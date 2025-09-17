@@ -1924,7 +1924,7 @@ const HotelsManagement = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[1, 2, 3, 4, 5].map((rating) => (
+            {[0,1, 2, 3, 4, 5].map((rating) => (
               <SelectItem key={rating} value={rating.toString()}>
                 {rating} Star
               </SelectItem>
@@ -2794,7 +2794,7 @@ const HotelsManagement = () => {
 
       {/* Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none overflow-y-auto p-6">
           <DialogHeader>
             <DialogTitle>
               {modalMode === "create" ? "Add New Hotel" : "Edit Hotel"}

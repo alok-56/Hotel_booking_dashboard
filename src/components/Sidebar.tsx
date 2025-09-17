@@ -75,6 +75,7 @@ const Sidebar = ({
     { id: "expense", label: "Expense", icon: Receipt },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "cash-balance", label: "Cash Balance", icon: DollarSign },
+    { id: "user-logs", label: "Logs History", icon: Receipt },
     {
       id: "reports",
       label: "Reports",

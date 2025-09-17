@@ -17,6 +17,7 @@ import BookingReport from "../components/BookingReport";
 import CashBalance from "../components/CashBalance";
 import SettingsScreen from "../components/SettingsScreen";
 import ProfileSection from "../components/ProfileSection";
+import LogsManagement from "@/components/LogsManagement";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("growth");
@@ -71,6 +72,8 @@ const Index = () => {
         return <BookingReport />;
       case "cash-balance":
         return <CashBalance />;
+         case "user-logs":
+        return <LogsManagement/>;
       case "settings":
         return <SettingsScreen />;
       case "profile":

@@ -93,3 +93,25 @@ export const deleteAdmin = async (id: string) => {
   if (!res.ok || !data.status) throw new Error(data.message || "Delete failed");
   return data;
 };
+
+export const getLogs = async (bookingSearch = "", page = 1, limit = 10) => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (bookingSearch) {
+      params.append("bookingSearch", bookingSearch);
+    }
+
+    const response = await fetch(`${BASEURL}/web/logs?${params}`, {
+      headers: { token: TOKEN()! },
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching logs:", error);
+    throw error;
+  }
+};

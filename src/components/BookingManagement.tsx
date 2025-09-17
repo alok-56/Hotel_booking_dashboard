@@ -1044,7 +1044,6 @@ const BookingManagement = () => {
             childrencount: booking.guests?.children || 0,
             userifo: booking.userInfo || [],
             roomType: booking.roomType || "Standard",
-
             phoneNumber: booking.userInfo?.[0]?.phone || "",
             email: booking.userInfo?.[0]?.email || "",
             roomId: booking.roomId,
@@ -1128,7 +1127,7 @@ const BookingManagement = () => {
     "UPI",
     "NetBanking",
     "Paytm",
-    "Cheque"
+    "Cheque",
   ];
 
   // Filter valid room numbers to prevent empty string values
@@ -1144,7 +1143,8 @@ const BookingManagement = () => {
         booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.phoneNumber.includes(searchTerm) ||
-        booking.email.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.actualBookingId.toLowerCase().includes(searchTerm.toLowerCase())
     );
   const upcomingCount = bookings.filter((b) => b.status === "upcoming").length;
   const inHouseCount = bookings.filter((b) => b.status === "in-house").length;
