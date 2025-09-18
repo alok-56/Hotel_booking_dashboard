@@ -1,1 +1,1 @@
-export const BASEURL = 'https://brills-backend.vercel.app/api/v1';
+export const BASEURL = 'http://localhost:9100/api/v1';
