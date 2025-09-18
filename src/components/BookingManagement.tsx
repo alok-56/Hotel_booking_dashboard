@@ -1049,6 +1049,7 @@ const BookingManagement = () => {
             roomId: booking.roomId,
             checkindate: booking.checkInDate,
             checkoutdate: booking.checkOutDate,
+            hotelId:booking?.hotelId
           })
         );
 
