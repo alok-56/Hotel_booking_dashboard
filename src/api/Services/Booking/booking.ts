@@ -154,3 +154,20 @@ export const getGuestStatusHistory = async (
 
   return data;
 };
+
+export const updateBookingDetails = async (payload: any): Promise<any> => {
+  const url = `${BASEURL}/booking/bookingupdate`;
+  console.log(payload);
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      token: TOKEN() || "",
+    },
+    body: JSON.stringify(payload), // <--- send directly
+  });
+
+  const data = await res.json();
+  return data;
+};
+

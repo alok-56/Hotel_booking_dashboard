@@ -386,7 +386,7 @@ const BookingDetailModal = ({
 
         <div className="p-6 space-y-8">
          
-          <BookingEditSection booking={booking} ></BookingEditSection>
+          <BookingEditSection booking={booking} onClose={onClose}></BookingEditSection>
 
           {/* Stay & Room Details */}
           <div className="bg-white rounded-lg border border-gray-200">
